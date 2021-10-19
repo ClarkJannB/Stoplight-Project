@@ -7,9 +7,9 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 
 void setup () {
   Serial.begin(57600);
-  
-//int x = rtc.begin();
-//Serial.println(x);
+
+  //int x = rtc.begin();
+  //Serial.println(x);
 
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
@@ -43,8 +43,8 @@ void setup () {
   // to be restarted by clearing the STOP bit. Let's do this to ensure
   // the RTC is running.
   rtc.start();
-  
-   // The PCF8523 can be calibrated for:
+
+  // The PCF8523 can be calibrated for:
   //        - Aging adjustment
   //        - Temperature compensation
   //        - Accuracy tuning
@@ -66,27 +66,53 @@ void setup () {
 
   Serial.print("Offset is "); Serial.println(offset); // Print to control offset
 
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
 }
 
 void loop () {
-    DateTime now = rtc.now();
+  DateTime now = rtc.now();
 
+
+
+
+//set the time conditionals ex: green light on at 7 45
+
+if (now.hour() == 7 && now.minute() == 45) { 
+  digitalWrite(2,HIGH);
+} 
+
+
+
+  digitalWrite(3, HIGH);
+
+
+  digitalWrite(4, HIGH);
+
+  Serial.println();
+  Serial.print("October ");
+  Serial.print(now.day());
+  Serial.println();
+  Serial.print(now.hour());
+  Serial.print(" hours");
+  Serial.print(' ');
+  Serial.println();
+  Serial.print(now.minute());
+  Serial.print(" minutes");
+  Serial.print(' ');
+  Serial.println();
+  Serial.print(now.second());
+  Serial.print(" seconds");
+
+  if (now.second() == 35) {
     Serial.println();
-    Serial.print("October ");
-    Serial.print(now.day());
+    Serial.print("it's working");
     Serial.println();
-    Serial.print(now.hour());
-    Serial.print(" hours");
-    Serial.print(' ');
-    Serial.println(); 
-    Serial.print(now.minute());
-    Serial.print(" minutes");
-    Serial.print(' ');
-    Serial.println(); 
-    Serial.print(now.second());
-    Serial.print(" seconds"); 
-    
-    /*
+  }
+
+
+  /*
 
     Serial.print(now.year(), DEC);
     Serial.print('/');
@@ -127,6 +153,6 @@ void loop () {
     Serial.println();
 
     Serial.println();
-    */
-    delay(1000);
+  */
+  delay(1000);
 }
