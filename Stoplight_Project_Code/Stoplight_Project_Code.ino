@@ -5,11 +5,12 @@ RTC_PCF8523 rtc;
 
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
+int hoursDay[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ,21, 22, 23, 24};
+int mins[] = {-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60};
+int secs[] = {-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60};
+
 void setup () {
   Serial.begin(57600);
-
-  //int x = rtc.begin();
-  //Serial.println(x);
 
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
@@ -19,50 +20,20 @@ void setup () {
 
   if (! rtc.initialized() || rtc.lostPower()) {
     Serial.println("RTC is NOT initialized, let's set the time!");
-    // When time needs to be set on a new device, or after a power loss, the
-    // following line sets the RTC to the date & time this sketch was compiled
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-    //
-    // Note: allow 2 seconds after inserting battery or applying external power
-    // without battery before calling adjust(). This gives the PCF8523's
-    // crystal oscillator time to stabilize. If you call adjust() very quickly
-    // after the RTC is powered, lostPower() may still return true.
   }
 
-  // When time needs to be re-set on a previously configured device, the
-  // following line sets the RTC to the date & time this sketch was compiled
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // This line sets the RTC with an explicit date & time, for example to set
-  // January 21, 2014 at 3am you would call:
-  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
-  // When the RTC was stopped and stays connected to the battery, it has
-  // to be restarted by clearing the STOP bit. Let's do this to ensure
-  // the RTC is running.
   rtc.start();
 
-  // The PCF8523 can be calibrated for:
-  //        - Aging adjustment
-  //        - Temperature compensation
-  //        - Accuracy tuning
-  // The offset mode to use, once every two hours or once every minute.
-  // The offset Offset value from -64 to +63. See the Application Note for calculation of offset values.
-  // https://www.nxp.com/docs/en/application-note/AN11247.pdf
-  // The deviation in parts per million can be calculated over a period of observation. Both the drift (which can be negative)
-  // and the observation period must be in seconds. For accuracy the variation should be observed over about 1 week.
-  // Note: any previous calibration should cancelled prior to any new observation period.
-  // Example - RTC gaining 43 seconds in 1 week
+
   float drift = 43; // seconds plus or minus over oservation period - set to 0 to cancel previous calibration.
   float period_sec = (7 * 86400);  // total obsevation period in seconds (86400 = seconds in 1 day:  7 days = (7 * 86400) seconds )
   float deviation_ppm = (drift / period_sec * 1000000); //  deviation in parts per million (μs)
   float drift_unit = 4.34; // use with offset mode PCF8523_TwoHours
-  // float drift_unit = 4.069; //For corrections every min the drift_unit is 4.069 ppm (use with offset mode PCF8523_OneMinute)
+
   int offset = round(deviation_ppm / drift_unit);
-  // rtc.calibrate(PCF8523_TwoHours, offset); // Un-comment to perform calibration once drift (seconds) and observation period (seconds) are correct
-  // rtc.calibrate(PCF8523_TwoHours, 0); // Un-comment to cancel previous calibration
+
 
   Serial.print("Offset is "); Serial.println(offset); // Print to control offset
 
@@ -75,84 +46,43 @@ void loop () {
   DateTime now = rtc.now();
 
 
-
-
-//set the time conditionals ex: green light on at 7 45
-
-if (now.hour() == 7 && now.minute() == 45) { 
-  digitalWrite(2,HIGH);
-} 
-
-
-
-  digitalWrite(3, HIGH);
-
-
-  digitalWrite(4, HIGH);
-
-  Serial.println();
-  Serial.print("October ");
-  Serial.print(now.day());
-  Serial.println();
+  //prints time readout
   Serial.print(now.hour());
-  Serial.print(" hours");
-  Serial.print(' ');
-  Serial.println();
+  Serial.print(" h ");
   Serial.print(now.minute());
-  Serial.print(" minutes");
-  Serial.print(' ');
-  Serial.println();
+  Serial.print(" m ");
   Serial.print(now.second());
-  Serial.print(" seconds");
+  Serial.print(" s ");
+  Serial.println();
 
-  if (now.second() == 35) {
-    Serial.println();
-    Serial.print("it's working");
-    Serial.println();
+  Serial.print(mins[7]);
+
+
+  // (BASIC DOESN"T USE ARRAYS) goes green 1 second, yellow 2 seconds, red 3 seconds, then repeats through the whole minute
+  if (now.second() == 1 || now.second() == 4 || now.second() == 7 || now.second() == 10 || now.second() == 13 || now.second() == 16 || now.second() == 19 || now.second() == 22 || now.second() == 25 || now.second() == 28 || now.second() == 31 || now.second() == 34
+      || now.second() == 37 || now.second() == 40 || now.second() == 43 || now.second() == 46 || now.second() == 49 || now.second() == 52 || now.second() == 55 || now.second() == 58) {
+    digitalWrite(2, HIGH);
+  } else {
+    digitalWrite(2, LOW);
+  }
+
+  if (now.second() == 2 || now.second() == 5 || now.second() == 8 || now.second() == 11 || now.second() == 14 || now.second() == 17 || now.second() == 20 || now.second() == 23 || now.second() == 26 || now.second() == 29 || now.second() == 32 || now.second() == 35
+      || now.second() == 38 || now.second() == 41 || now.second() == 44 || now.second() == 47 || now.second() == 50 || now.second() == 53 || now.second() == 56 || now.second() == 59) {
+    digitalWrite(3, HIGH);
+  } else {
+    digitalWrite(3, LOW);
+  }
+
+  if (now.second() == 3 || now.second() == 6 || now.second() == 9 || now.second() == 12 || now.second() == 15 || now.second() == 18 || now.second() == 21 || now.second() == 24 || now.second() == 27 || now.second() == 30 || now.second() == 33 || now.second() == 36
+      || now.second() == 39 || now.second() == 42 || now.second() == 45 || now.second() == 48 || now.second() == 51 || now.second() == 54 || now.second() == 57 || now.second() == 0) {
+    digitalWrite(4, HIGH);
+  } else {
+    digitalWrite(4, LOW);
   }
 
 
-  /*
 
-    Serial.print(now.year(), DEC);
-    Serial.print('/');
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print(" (");
-    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
-    Serial.print(") ");
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    Serial.print(now.second(), DEC);
-    Serial.println();
 
-    Serial.print(" since midnight 1/1/1970 = ");
-    Serial.print(now.unixtime());
-    Serial.print("s = ");
-    Serial.print(now.unixtime() / 86400L);
-    Serial.println("d");
 
-    // calculate a date which is 7 days, 12 hours and 30 seconds into the future
-    DateTime future (now + TimeSpan(7,12,30,6));
-
-    Serial.print(" now + 7d + 12h + 30m + 6s: ");
-    Serial.print(future.year(), DEC);
-    Serial.print('/');
-    Serial.print(future.month(), DEC);
-    Serial.print('/');
-    Serial.print(future.day(), DEC);
-    Serial.print(' ');
-    Serial.print(future.hour(), DEC);
-    Serial.print(':');
-    Serial.print(future.minute(), DEC);
-    Serial.print(':');
-    Serial.print(future.second(), DEC);
-    Serial.println();
-
-    Serial.println();
-  */
   delay(1000);
 }
