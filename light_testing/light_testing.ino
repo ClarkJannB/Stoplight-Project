@@ -13,7 +13,7 @@ RTC_PCF8523 rtc;
 
 int state = NOSCHOOL;
 
-int nowTime = 0;
+int nowTime = 465;
 
 int schReg[15][2] {
   {7, 45},
@@ -70,12 +70,7 @@ void loop() {
   nowTime++;
 
   //print statements so that I can see the current time counting
-  Serial.print("The current time is ");
-  Serial.print(hrs);
-  Serial.print(" h ");
-  Serial.print(mins);
-  Serial.print(" m ");
-  Serial.println();
+
   Serial.print("nowTime:");
   Serial.println(nowTime);
 
@@ -83,11 +78,11 @@ void loop() {
   if (nowTime <= 465) {
     delay(5);
   } else {
-    delay(500);
+    delay(1000);
   }
 
   if (nowTime >= 900 ) {
-    nowTime = 0;
+    nowTime = 450;
   }
 
 
@@ -96,12 +91,13 @@ void loop() {
       Serial.println("GREEN");  //print statement when green light is on
       for (int i = 0; i <= 13; i++) {
         int p_begin = convert_time(schReg[i][0], schReg[i][1]); //checks the schedule
-        int p_end = convert_time(schReg[i + 1][0], schReg[i + 1][1]) - 7; //checking the end times of the schedule minus 7 for passing time
-        digitalWrite(GREEN, HIGH);  //turn on green light
+        int p_end = convert_time(schReg[i + 1][0], schReg[i + 1][1])  - 7; //checking the end times of the schedule minus 7 for passing time
+        if (nowTime >= p_begin && nowTime <= p_end) {
+          digitalWrite(GREEN, HIGH);  //turn on green light
+        }
         if (nowTime <=  p_begin &&  nowTime >= p_end ) {
-          state = PERIOD;
-        } else {
-          state = WARNING;  //move on to Yellow state
+          state = WARNING;
+          digitalWrite(GREEN, LOW);
         }
       }
       break;
@@ -111,19 +107,25 @@ void loop() {
       for (int x = 0; x <= 13; x = x + 2) {
         int startPassing = convert_time(schReg[x][0], schReg[x][1]) + 51;
         int endPassing = convert_time(schReg[x + 1][0], schReg[x + 1][1]);
+        Serial.print("start-end ");
+        Serial.print(startPassing);
+        Serial.print('-');
+        Serial.println(endPassing);
         if (nowTime >=  startPassing &&  nowTime <= endPassing ) {
           state = PASSING;
-
+          digitalWrite(YELLOW, LOW);
         }
       }
       break;
     case PASSING:
       digitalWrite(RED, HIGH);
       Serial.println("RED");
-      //for (int x = 0; x <= 13; x++) {
-      //if (((nowTime <= convert_time(schReg[x][0], schReg[x][1])) &&  (nowTime >= convert_time(schReg[x + 1][0], schReg[x + 1][1])))) {
-      state = PERIOD;
-      digitalWrite(RED, LOW);
+      for (int x = 0; x <= 13; x++){
+      if (((nowTime <= convert_time(schReg[x][0], schReg[x][1])) &&  (nowTime >= convert_time(schReg[x + 1][0], schReg[x + 1][1])))) {
+        state = NOSCHOOL;
+        digitalWrite(RED, LOW);
+      }
+      }
       break;
     case NOSCHOOL:
       int preSchool = convert_time(schReg[0][0], schReg[0][1]);
