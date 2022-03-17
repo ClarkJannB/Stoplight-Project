@@ -1,38 +1,54 @@
 
 #include "RTClib.h"
-
-#define NOSCHOOL 1
-#define PERIOD 2
-#define WARNING 3
-#define PASSING 4
-
-#define GREEN 2
+//#define PERIOD 2
+//#define WARNING 3
+//#define PASSING 4
+#define GREEN 4
 #define YELLOW 3
-#define RED 4
-RTC_PCF8523 rtc;
+#define RED 2
+#define WARNING_TIME 5
+#define LIGHT_ON  0
+#define LIGHT_OFF 1
+//RTC_PCF8523 rtc;
+RTC_DS1307 rtc;
 
-int state = NOSCHOOL;
+int currentPeriod = 0;
+int period = 0;
+int nowTime = 850;
 
-int nowTime = 465;
+// Starting/end times of the period
+int schReg[16][2] {
 
-int schReg[15][2] {
-  {7, 45},
-  {7, 49},
-  {7, 52},
-  {8, 48},
-  {8, 51},
-  {9, 47},
-  {9, 50},
-  {10, 46},
-  {10, 51},
-  {11, 47},
-  //  {12, 20},
-  {12, 23},
-  {13, 19},
-  {13, 22},
-  {14, 18},
+
+  // Block 0 ("Advisory" in the Regular Time Bell Schedule)
+  {7, 45},  //465
+  {7, 59},  //469
+  // Block 2 ("Period 1" in the Regular Time Bell Schedule)
+  {7, 52},  //472
+  {8, 48},  //528
+  // Block 2 ("Period 2" in the Regular Time Bell Schedule)
+  {8, 51},  //531
+  {9, 47},  //587
+  // Block 3 ("Period 3" in the Regular Time Bell Schedule)
+  {9, 50},  //590
+  {10, 46}, //640
+  // Block 4 ("Period 4" in the Regular Time Bell Schedule)
+  {10, 51}, //651
+  {11, 47}, //707
+  // Block 5 ("Lunch" in the Regular Time Bell Schedule)
+  {11, 50}, //710
+  {12, 18}, //738
+  // Block 6 ("Period 5" in the Regular Time Bell Schedule)
+  {12, 23}, //743
+  {13, 19}, //799
+  // Block 7 ("Period 6" in the Regular Time Bell Schedule)
+  {13, 22}, //802
+  {14, 18} //858
+  // Block 8 to leave the loop
+
 };
 
+// Converts the hours and minutes of the array into # of minutes
 int convert_time(int hrs, int mns) {
   int conv_time;
   conv_time = hrs * 60;
@@ -40,105 +56,130 @@ int convert_time(int hrs, int mns) {
   return conv_time;
 };
 
-
-
 void setup() {
-  Serial.begin(57600);
+  int conv_time;
+  int i;
+  Serial.begin(9600);
+
+  pinMode(GREEN, OUTPUT);
+  pinMode(YELLOW, OUTPUT);
+  pinMode(RED, OUTPUT);
+
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
     Serial.flush();
     abort();
   }
-  if (! rtc.initialized() || rtc.lostPower()) {
-    Serial.println("RTC is NOT initialized, let's set the time!");
-    rtc.adjust(DateTime(2021, 1, 1, 7, 7, 0));
-    rtc.start();
-  }
-  rtc.start();
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(4, OUTPUT);
 
+  if (! rtc.isrunning()) {
+    Serial.println("RTC is NOT running, let's set the time!");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
+
+  //DateTime now = rtc.now();
+  //int hrs = now.minute();
+  //int mins = now.second();
+  //int secs = now.second();
+  //convert_time(hrs, mins);
+
+
+  // Gets initial block
+  for ( i = 0; i < 8; i += 2) {
+    int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
+    int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
+    if (nowTime >= startPeriod && nowTime <= nextPeriod) {
+      break;
+    }
+  }
+  period = i;
 }
 
 void loop() {
-  DateTime now = rtc.now();
+  //int conv_time;
 
-  int hrs = now.minute();
-  int mins = now.second();
+  //DateTime now = rtc.now();
+  //int hrs = now.hour();
+  //int mins = now.minute();
+  //int secs = now.second();
+  //int nowTime = convert_time(hrs, mins);
+  nowTime += 1;
 
-  nowTime++;
+  // Gets time values for current period
 
-  //print statements so that I can see the current time counting
+  int startPeriod = convert_time(schReg[period][0], schReg[period][1]); //green is on between startPeriod and endPeriod - 5
+  int endPeriod = convert_time(schReg[period + 1][0], schReg[period + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
+  int nextPeriod = convert_time(schReg[period + 2][0], schReg[period + 2][1]);  //red is on between endPeriod and nextPeriod
 
-  Serial.print("nowTime:");
-  Serial.println(nowTime);
+  Serial.print("nowTime: ");
+  Serial.print(nowTime);
+  Serial.print("  ");
+  Serial.print("StartP: ");
+  Serial.print(startPeriod);
+  Serial.print("  ");
+  Serial.print("EndP: ");
+  Serial.print(endPeriod);
+  Serial.print("  ");
+  Serial.print("NextP: ");
+  Serial.print(nextPeriod);
+  Serial.print("  ");
+  Serial.print("Period ");
+  Serial.print(period / 2);
+  Serial.print("  ");
+  Serial.print("hrs:");
+  Serial.print(hrs);
+  Serial.print("  ");
+  Serial.print("mins:");
+  Serial.print(mins);
+  Serial.print("  ");
+  Serial.print("secs:");
+  Serial.print(secs);
 
-  //lets me speed up the first part of the day where the light shouldn't be on
-  if (nowTime <= 465) {
-    delay(5);
-  } else {
-    delay(1000);
+
+  //Serial.println();
+  // Function to turn off the lights when theres no school
+  if (nowTime < convert_time(schReg[0][0], schReg[0][1]) || nowTime > convert_time(schReg[15][0], schReg[15][1])) {
+    digitalWrite(GREEN, LIGHT_OFF);
+    digitalWrite(YELLOW, LIGHT_OFF);
+    digitalWrite(RED, LIGHT_OFF);
+    Serial.println(" ALL OFF");
+
+    //Turn only red light on during lunch time
+  } else if ((nowTime >= convert_time(schReg[10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
+    digitalWrite(GREEN, LIGHT_OFF);
+    digitalWrite(YELLOW, LIGHT_OFF);
+    digitalWrite(RED, LIGHT_ON);
+    Serial.println("LUNCH");
+
+    // Class time
+  } else if (nowTime <= endPeriod - WARNING_TIME) {
+    digitalWrite(GREEN, LIGHT_ON);
+    digitalWrite(YELLOW, LIGHT_OFF);
+    digitalWrite(RED, LIGHT_OFF);
+    Serial.println(" GREEN ON");
+
+    // Five minutes before period ends
+  } else if (nowTime <= endPeriod) {
+    digitalWrite(YELLOW, LIGHT_ON);
+    digitalWrite(GREEN, LIGHT_OFF);
+    digitalWrite(RED, LIGHT_OFF);
+    Serial.println(" YELLOW ON");
+
+    // Passing time
+  } else if (nowTime >= endPeriod && nowTime <= nextPeriod) {
+    Serial.println(" RED ON");
+    digitalWrite(RED, LIGHT_ON);
+    digitalWrite(YELLOW, LIGHT_OFF);
+
+    // Cycle the light testing and go to next period
+  } else if (nowTime >= nextPeriod) {
+    digitalWrite(RED, LIGHT_OFF);
+    digitalWrite(GREEN, LIGHT_ON);
+    Serial.println("!NEW PERIOD!");
+    period += 2;
   }
 
-  if (nowTime >= 900 ) {
-    nowTime = 450;
-  }
-
-
-  switch (state) {
-    case PERIOD:
-      Serial.println("GREEN");  //print statement when green light is on
-      for (int i = 0; i <= 13; i++) {
-        int p_begin = convert_time(schReg[i][0], schReg[i][1]); //checks the schedule
-        int p_end = convert_time(schReg[i + 1][0], schReg[i + 1][1])  - 7; //checking the end times of the schedule minus 7 for passing time
-        if (nowTime >= p_begin && nowTime <= p_end) {
-          digitalWrite(GREEN, HIGH);  //turn on green light
-        }
-        if (nowTime <=  p_begin &&  nowTime >= p_end ) {
-          state = WARNING;
-          digitalWrite(GREEN, LOW);
-        }
-      }
-      break;
-    case WARNING:
-      digitalWrite(YELLOW, HIGH); //turn on yellow light
-      Serial.println("YELLOW"); //print statement when yellow light is on
-      for (int x = 0; x <= 13; x = x + 2) {
-        int startPassing = convert_time(schReg[x][0], schReg[x][1]) + 51;
-        int endPassing = convert_time(schReg[x + 1][0], schReg[x + 1][1]);
-        Serial.print("start-end ");
-        Serial.print(startPassing);
-        Serial.print('-');
-        Serial.println(endPassing);
-        if (nowTime >=  startPassing &&  nowTime <= endPassing ) {
-          state = PASSING;
-          digitalWrite(YELLOW, LOW);
-        }
-      }
-      break;
-    case PASSING:
-      digitalWrite(RED, HIGH);
-      Serial.println("RED");
-      for (int x = 0; x <= 13; x++){
-      if (((nowTime <= convert_time(schReg[x][0], schReg[x][1])) &&  (nowTime >= convert_time(schReg[x + 1][0], schReg[x + 1][1])))) {
-        state = NOSCHOOL;
-        digitalWrite(RED, LOW);
-      }
-      }
-      break;
-    case NOSCHOOL:
-      int preSchool = convert_time(schReg[0][0], schReg[0][1]);
-      int postSchool = convert_time(schReg[14][0], schReg[14][1]);
-      Serial.println("NO SCHOOL");
-      if (nowTime <= preSchool && nowTime >= postSchool) {
-        digitalWrite(GREEN, LOW);
-        digitalWrite(YELLOW, LOW);
-        digitalWrite(RED, LOW);
-      } else {
-        state = PERIOD;
-      }
-      break;
-
+  delay(1000);
+  if (nowTime >= 865) {
+    nowTime = 460;
   }
 }

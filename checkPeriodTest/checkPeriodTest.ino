@@ -1,3 +1,4 @@
+
 #include "RTClib.h"
 #define PERIOD 2
 #define WARNING 3
@@ -7,7 +8,7 @@
 #define RED 4
 RTC_PCF8523 rtc;
 int state = PERIOD;
-int nowTime = 547;
+int nowTime = 725;
 
 int currentPeriod = 0;
 
@@ -105,6 +106,7 @@ void setup() {
 
 
 void loop() {
+  
 
   // Gets time values for current period
   int startPeriod = convert_time(schReg[period][0], schReg[period][1]); //green is on between startPeriod and endPeriod - 5
@@ -194,14 +196,14 @@ void loop() {
     digitalWrite(RED, LOW);
   }
 
-  /*
+  
     //Turn only red light on during lunch time
-    if ((nowTime >= convert_time(schReg[10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1]))) {
+    if ((nowTime >= convert_time(schReg[10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
     digitalWrite(GREEN, LOW);
     digitalWrite(YELLOW, LOW);
     digitalWrite(RED, HIGH);
     }
-  */
+  
 
 
 
