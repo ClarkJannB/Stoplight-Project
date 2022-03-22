@@ -9,13 +9,18 @@
 #define LIGHT_ON  0
 #define LIGHT_OFF 1
 #define WARNING_TIME 5
+#define SWITCHA 5
+#define SWITCHB 6
+
 RTC_DS1307 rtc;
 
 int schState = 0;
 int schIndex = 0;
 
-//int schStart = 0;
-//int schEnd = 6;
+int schStart = 16;
+int schJump = 6; 
+int schEnd = 29;
+int lunch = 10; 
 
 
 int currentPeriod = 0;
@@ -139,11 +144,6 @@ int schReg[65][2] {
   {13, 26}, //
   {14, 18}, //
 
-
-
-
-
-
 };
 
 
@@ -164,6 +164,8 @@ void setup() {
   pinMode(GREEN, OUTPUT);
   pinMode(YELLOW, OUTPUT);
   pinMode(RED, OUTPUT);
+  pinMode(SWITCHA, INPUT_PULLUP); 
+  pinMode(SWITCHB, INPUT_PULLUP);  
 
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
@@ -183,7 +185,7 @@ void setup() {
 
 
   // Gets initial block
-  for ( i = 0; i < 8; i += 2) {
+  for ( i = schStart; i < schJump; i += 2) {
     int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
     int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
 
@@ -215,6 +217,7 @@ void loop() {
   int endPeriod = convert_time(schReg[period + 1][0], schReg[period + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
   int nextPeriod = convert_time(schReg[period + 2][0], schReg[period + 2][1]);  //red is on between endPeriod and nextPeriod
 
+  // Print statements for Serial monitor
   Serial.print("nowTime: ");
   Serial.print(nowTime);
   Serial.print("  ");
@@ -239,16 +242,25 @@ void loop() {
   Serial.print("secs:");
   Serial.print(secs);
 
+  //Switch case to change which schedules run
+  /*
+  switch(true) { 
+    case (SWITCHA == HIGH && SWITCH B == HIGH): 
+    schStart = /
+  }
+*/
 
   // Function to turn off the lights when theres no school
-  if (nowTime < convert_time(schReg[0][0], schReg[0][1]) || nowTime > convert_time(schReg[15][0], schReg[15][1])) {
+  //if (nowTime < convert_time(schReg[0][0], schReg[0][1]) || nowTime > convert_time(schReg[15][0], schReg[15][1])) {
+    if (nowTime < convert_time(schReg[schStart][0], schReg[schStart][1]) || nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
     digitalWrite(GREEN, LIGHT_OFF);
     digitalWrite(YELLOW, LIGHT_OFF);
     digitalWrite(RED, LIGHT_OFF);
     Serial.println(" ALL OFF");
 
     //Turn only red light on during lunch time
-  } else if ((nowTime >= convert_time(schReg[0 + 10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
+  //} else if ((nowTime >= convert_time(schReg[0 + 10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
+  } else if ((nowTime >= convert_time(schReg[lunch][0], schReg[lunch][1])) && nowTime <= convert_time(schReg[lunch + 1][0], schReg[lunch + 1][1])) {
     digitalWrite(GREEN, LIGHT_OFF);
     digitalWrite(YELLOW, LIGHT_OFF);
     digitalWrite(RED, LIGHT_ON);
