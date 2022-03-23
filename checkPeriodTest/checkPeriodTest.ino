@@ -14,14 +14,12 @@
 int schState = 0;
 int schIndex = 0;
 
-int schStart = 16;
-int schJump = 6; 
-int schEnd = 29;
-int lunch = 10; 
+
 
 
 int currentPeriod = 0;
-int period = 0;
+int period = 16;
+int nowTime = 460;
 
 // Starting/end times of the period
 int schReg[65][2] {
@@ -30,7 +28,7 @@ int schReg[65][2] {
   //Index (0 - 15)
   // Block 0 (ADVISORY)
   {7, 45},  //465
-  {7, 59},  //469
+  {7, 49},  //469
   // Block 1 (PERIOD 1)
   {7, 52},  //472
   {8, 48},  //528
@@ -115,31 +113,31 @@ int schReg[65][2] {
 
   //EXTENDED ADVISORY ACTIVITY:
 
-  //Index (48-65)
+  //Index (48-63)
   // Block 0 (ADVISORY)
-  {7, 45}, //
-  {8, 15}, //
+  {7, 45}, //465
+  {8, 15}, //495
   // Block 1 (PERIOD 1)
-  {8, 18}, //
-  {9, 10}, //
+  {8, 18}, //498
+  {9, 10}, //550
   // Block 2 (PERIOD 2)
-  {9, 13}, //
-  {10, 05}, //
+  {9, 13}, //553
+  {10, 5}, //605
   // Block 3 (PERIOD 3)
-  {10, 8}, //
-  {11, 00}, //
+  {10, 8}, //608
+  {11, 00}, //660
   // Block 4 (PERIOD 4)
-  {11, 03}, //
-  {11, 55}, //
+  {11, 03}, //663
+  {11, 55}, //715
   // Block 5 (LUNCH)
-  {11, 58}, //
-  {12, 28}, //
+  {11, 58}, //718
+  {12, 28}, //748
   // Block 6 (PERIOD 5)
-  {12, 31}, //
-  {13, 23}, //
+  {12, 31}, //751
+  {13, 23}, //803
   // Block 7 (PERIOD 6)
-  {13, 26}, //
-  {14, 18}, //
+  {13, 26}, //806
+  {14, 18}, //858
 
 };
 
@@ -153,21 +151,21 @@ int convert_time(int hrs, int mns) {
 
 void setup() {
   //int conv_time;
-  //int i;
+  int i;
   Serial.begin(9600);
 
   pinMode(GREEN, OUTPUT);
   pinMode(YELLOW, OUTPUT);
   pinMode(RED, OUTPUT);
-  pinMode(SWITCHA, INPUT_PULLUP); 
-  pinMode(SWITCHB, INPUT_PULLUP);  
-/*
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
-    abort();
-  }
-*/
+  pinMode(SWITCHA, INPUT_PULLUP);
+  pinMode(SWITCHB, INPUT_PULLUP);
+  /*
+    if (! rtc.begin()) {
+      Serial.println("Couldn't find RTC");
+      Serial.flush();
+      abort();
+    }
+  */
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
 
@@ -178,48 +176,56 @@ void setup() {
   //convert_time(hrs, mins);
   //int nowTime = conv_time;
 
-/*
-  // Gets initial block
-  for ( i = schStart; i < schJump; i += 2) {
-    int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
-    int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
+  
+    // Gets initial block
+    for ( i = schStart; i < schJump; i += 2) {
+      int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
+      int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
 
-    if (nowTime >= startPeriod && nowTime <= nextPeriod) {
-      break;
+      if (nowTime >= startPeriod && nowTime <= nextPeriod) {
+        break;
+      }
+
     }
 
-  }
+    int period = i;
 
-  //int period = i;
-
-*/
+  
 
 }
 
 void loop() {
-  
+
 
   // Gets time values for current period
   int startPeriod = convert_time(schReg[period][0], schReg[period][1]); //green is on between startPeriod and endPeriod - 5
   int endPeriod = convert_time(schReg[period + 1][0], schReg[period + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
   int nextPeriod = convert_time(schReg[period + 2][0], schReg[period + 2][1]);  //red is on between endPeriod and nextPeriod
 
-
-  //Serial.print("currentPeriod: ");
-  //Serial.println(currentPeriod);
-  Serial.print("startPeriod: ");
-  Serial.println(startPeriod);
-  Serial.print("endPeriod: ");
-  Serial.println(endPeriod);
-  Serial.print("nextPeriod: ");
-  Serial.println(nextPeriod);
-  Serial.print("block: ");
-  Serial.println(period);
+  //Serial.print(convert_time(schReg[schEnd][0], schReg[schEnd][1]));
   Serial.print("nowTime: ");
-  Serial.println(nowTime);
-  Serial.println("-------------------");
-  Serial.println();
-  delay(1000);
+  Serial.print(nowTime);
+  Serial.print("  ");
+  Serial.print("StartP: ");
+  Serial.print(startPeriod);
+  Serial.print("  ");
+  Serial.print("EndP: ");
+  Serial.print(endPeriod);
+  Serial.print("  ");
+  Serial.print("NextP: ");
+  Serial.print(nextPeriod);
+  Serial.print("  ");
+  Serial.print("Period ");
+  Serial.print(period / 2);
+  //Serial.print("  ");
+  //Serial.print("hrs:");
+  //Serial.print(hrs);
+  //Serial.print("  ");
+  //Serial.print("mins:");
+  //Serial.print(mins);
+  //Serial.print("  ");
+  //Serial.print("secs:");
+  //Serial.print(secs);
 
   nowTime++;
 
@@ -230,19 +236,19 @@ void loop() {
 
   // Function to turn off the lights when theres no school
   //if (nowTime < convert_time(schReg[0][0], schReg[0][1]) || nowTime > convert_time(schReg[15][0], schReg[15][1])) {
-    if (nowTime < convert_time(schReg[schStart][0], schReg[schStart][1]) || nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
+  if (nowTime < convert_time(schReg[schStart][0], schReg[schStart][1]) || nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
     digitalWrite(GREEN, LIGHT_OFF);
     digitalWrite(YELLOW, LIGHT_OFF);
     digitalWrite(RED, LIGHT_OFF);
     Serial.println(" ALL OFF");
 
     //Turn only red light on during lunch time
-  //} else if ((nowTime >= convert_time(schReg[0 + 10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
+    //} else if ((nowTime >= convert_time(schReg[0 + 10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
   } else if ((nowTime >= convert_time(schReg[lunch][0], schReg[lunch][1])) && nowTime <= convert_time(schReg[lunch + 1][0], schReg[lunch + 1][1])) {
     digitalWrite(GREEN, LIGHT_OFF);
     digitalWrite(YELLOW, LIGHT_OFF);
     digitalWrite(RED, LIGHT_ON);
-    Serial.println("LUNCH");
+    Serial.println(" LUNCH");
 
     // Class time
   } else if (nowTime <= endPeriod - WARNING_TIME) {
@@ -273,11 +279,12 @@ void loop() {
   }
 
 
-  /*
+  
     //reset counter timer
-    if (nowTime >= 890) {
-      nowTime = 0;
+    if (nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
+      nowTime = 400;
     }
-  */
+  
+  delay(100); 
 
 }
