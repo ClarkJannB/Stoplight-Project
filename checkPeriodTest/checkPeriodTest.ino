@@ -11,14 +11,18 @@
 #define WARNING_TIME 5
 #define SWITCHA 5
 #define SWITCHB 6
-int schState = 0;
-int schIndex = 0;
+//int schState = 0;
+//int schIndex = 0;
 
 
+int schStart = 16;
+int schEnd = 29;
+int schJump = 7; //how many periods there are in the day, how many times it jumps
+int lunch = -1;
 
-
-int currentPeriod = 0;
-int period = 16;
+//int currentPeriod = 0;
+int schIndex = 16;
+int period = schIndex;
 int nowTime = 460;
 
 // Starting/end times of the period
@@ -176,21 +180,21 @@ void setup() {
   //convert_time(hrs, mins);
   //int nowTime = conv_time;
 
-  
-    // Gets initial block
-    for ( i = schStart; i < schJump; i += 2) {
-      int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
-      int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
 
-      if (nowTime >= startPeriod && nowTime <= nextPeriod) {
-        break;
-      }
+  // Gets initial block
+  for ( i = schStart; i < schJump; i += 2) {
+    int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
+    int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
 
+    if (nowTime >= startPeriod && nowTime <= nextPeriod) {
+      break;
     }
 
-    int period = i;
+  }
 
-  
+  int period = i;
+
+
 
 }
 
@@ -202,6 +206,9 @@ void loop() {
   int endPeriod = convert_time(schReg[period + 1][0], schReg[period + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
   int nextPeriod = convert_time(schReg[period + 2][0], schReg[period + 2][1]);  //red is on between endPeriod and nextPeriod
 
+  int switcha = digitalRead(SWITCHA); 
+  int switchb = digitalRead(SWITCHB); 
+
   //Serial.print(convert_time(schReg[schEnd][0], schReg[schEnd][1]));
   Serial.print("nowTime: ");
   Serial.print(nowTime);
@@ -212,11 +219,11 @@ void loop() {
   Serial.print("EndP: ");
   Serial.print(endPeriod);
   Serial.print("  ");
-  Serial.print("NextP: ");
+  Serial.print(" NextP: ");
   Serial.print(nextPeriod);
-  Serial.print("  ");
-  Serial.print("Period ");
-  Serial.print(period / 2);
+  //Serial.print("  ");
+  //Serial.print("Period ");
+  //Serial.print(period / 2);
   //Serial.print("  ");
   //Serial.print("hrs:");
   //Serial.print(hrs);
@@ -229,9 +236,41 @@ void loop() {
 
   nowTime++;
 
-
-
-  //period = 3;
+  //Switch case to control the schedules
+  //switch (SWITCHA && SWITCHB) {
+  if  (switcha == HIGH && switchb == HIGH) {
+    //Regular Schedule
+    schStart = 0;
+    schEnd = 15;
+    schJump = 8;
+    lunch = 10;
+    Serial.print(" REGULAR SCHEDULE");
+    //break;
+  } else if (switcha == LOW && switchb == LOW) {
+    //Early Release Schedule
+    schStart = 16;
+    schEnd = 29;
+    schJump = 7;
+    lunch = -1;
+    Serial.print(" EARLY RELEASE");
+    //break;
+  } else if (switcha == HIGH && switchb == LOW) {
+    //Advisory Activity Schedule
+    schStart = 30;
+    schEnd = 47;
+    schJump = 9;
+    lunch = 42;
+    Serial.print(" ADVISORY ACTIVITY ");
+    //break;
+  } else if (switcha == LOW && switchb == HIGH) {
+    //Extended Advisory Schedule
+    schStart = 48;
+    schEnd = 63;
+    schJump = 8;
+    lunch = 58;
+    Serial.print(" EXTENDED ADVISORY");
+    //break;
+  }
 
 
   // Function to turn off the lights when theres no school
@@ -241,6 +280,7 @@ void loop() {
     digitalWrite(YELLOW, LIGHT_OFF);
     digitalWrite(RED, LIGHT_OFF);
     Serial.println(" ALL OFF");
+    period = schIndex;
 
     //Turn only red light on during lunch time
     //} else if ((nowTime >= convert_time(schReg[0 + 10][0], schReg[10][1])) && nowTime <= convert_time(schReg[11][0], schReg[11][1])) {
@@ -279,12 +319,12 @@ void loop() {
   }
 
 
-  
-    //reset counter timer
-    if (nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
-      nowTime = 400;
-    }
-  
-  delay(100); 
+
+  //reset counter timer
+  if (nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
+    nowTime = 400;
+  }
+
+  delay(100);
 
 }
