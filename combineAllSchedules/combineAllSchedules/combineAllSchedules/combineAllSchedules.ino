@@ -1,8 +1,5 @@
 
 #include "RTClib.h"
-//#define PERIOD 2
-//#define WARNING 3
-//#define PASSING 4
 #define GREEN 2
 #define YELLOW 3
 #define RED 4
@@ -314,7 +311,7 @@ void loop() {
     Serial.println(" GREEN ON");
 
     // Five minutes before period ends
-  } else if (nowTime <= endPeriod) {
+  } else if (nowTime < endPeriod) {
     digitalWrite(YELLOW, LIGHT_ON);
     digitalWrite(GREEN, LIGHT_OFF);
     digitalWrite(RED, LIGHT_OFF);
