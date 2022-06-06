@@ -9,8 +9,8 @@
 #define GREEN 2
 #define YELLOW 3
 #define RED 4
-#define LIGHT_ON  0
-#define LIGHT_OFF 1
+#define LIGHT_ON  1
+#define LIGHT_OFF 0
 #define WARNING_TIME 5
 #define SWITCHA 5
 #define SWITCHB 6
@@ -392,12 +392,6 @@ void loop() {
     schIndex = 48;
     Serial.print(" /EXTENDED ADVISORY/");
   }
-
-
-
-
-
-
 
   // Function to turn off the lights when theres no school
   if (nowTime < convert_time(schReg[schStart][0], schReg[schStart][1]) || nowTime > convert_time(schReg[schEnd][0], schReg[schEnd][1])) {
