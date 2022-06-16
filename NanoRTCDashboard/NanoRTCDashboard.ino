@@ -65,7 +65,7 @@ void onGreenChange()  {
   // Add your code here to act upon Green change
   Serial.print("GREEN: ");
   Serial.println(green);
-  if (green) {
+  if (!green) {
     digitalWrite(GREEN, LIGHT_ON);
   } else {
     digitalWrite(GREEN, LIGHT_OFF);
@@ -79,7 +79,7 @@ void onRedChange()  {
   // Add your code here to act upon Red change
   Serial.print("RED: ");
   Serial.println(red);
-  if (red) {
+  if (!red) {
     digitalWrite(RED, LIGHT_ON);
   } else {
     digitalWrite(RED, LIGHT_OFF);
@@ -93,7 +93,7 @@ void onYellowChange()  {
   // Add your code here to act upon Yellow change
   Serial.print("YELLOW: ");
   Serial.println(yellow);
-  if (yellow) {
+  if (!yellow) {
     digitalWrite(YELLOW, LIGHT_ON);
   } else {
     digitalWrite(YELLOW, LIGHT_OFF);

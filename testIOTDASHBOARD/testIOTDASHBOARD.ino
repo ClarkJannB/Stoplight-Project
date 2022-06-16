@@ -26,6 +26,12 @@ void setup() {
   pinMode(GREEN, OUTPUT);
   pinMode(YELLOW, OUTPUT);
   pinMode(RED, OUTPUT);
+
+/*
+  digitalWrite(GREEN, LIGHT_ON); 
+  digitalWrite(YELLOW, LIGHT_ON); 
+  digitalWrite(RED, LIGHT_ON); 
+  */
 }
 
 void loop() {
@@ -39,20 +45,42 @@ void loop() {
   Serial.println(digitalRead(RED)); 
 
   delay(1000);
-
+  /*
+  onGreenChange(); 
+  onRedChange(); 
+  onYellowChange(); 
+*/
 }
 
 void onGreenChange()  {
   //Serial.print(" GREEN ON");
-  digitalWrite(GREEN, !digitalRead(GREEN));
+  //digitalWrite(GREEN, !digitalRead(GREEN));
+
+  if (!green) { 
+    digitalWrite(GREEN, LIGHT_ON); 
+  } else { 
+    digitalWrite(GREEN, LIGHT_OFF); 
+  }
 }
 
 void onRedChange()  {
   //Serial.print(" RED ON");
-  digitalWrite(RED, !digitalRead(RED));
+  //digitalWrite(RED, !digitalRead(RED));
+
+  if (!red) { 
+    digitalWrite(RED, LIGHT_ON); 
+  } else { 
+    digitalWrite(RED, LIGHT_OFF); 
+  }
 }
 
 void onYellowChange()  {
   //Serial.print(" YELLOW ON ");
-  digitalWrite(YELLOW, !digitalRead(YELLOW));
+  //digitalWrite(YELLOW, !digitalRead(YELLOW));
+
+  if (!yellow) { 
+    digitalWrite(YELLOW, LIGHT_ON); 
+  } else { 
+    digitalWrite(YELLOW, LIGHT_OFF); 
+  }
 }
