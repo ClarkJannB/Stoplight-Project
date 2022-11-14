@@ -20,7 +20,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-#define DAYLIGHTSAVINGS 1
+#define DAYLIGHTSAVINGS 0 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
 #define GREEN_PIN 5
 #define YELLOW_PIN 0
 #define RED_PIN 2
@@ -221,6 +221,8 @@ void setup() {
 
 void loop() {
   timeClient.update();
+
+  Serial.print(timeClient.getDay()); 
 
   //Date and time print statements
   Serial.print(daysOfTheWeek[timeClient.getDay()]);
