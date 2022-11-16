@@ -1,5 +1,5 @@
 /*
-  Recieves time from Netowrk Time Protocol (NTP) to control the lights
+  Recieves time from Network Time Protocol (NTP) to control the lights
 
   Green indicates class time or "go time"
   Yellow indicates warning time or 5 minutes before the period ends

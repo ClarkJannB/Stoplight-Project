@@ -1,3 +1,23 @@
+/*
+  Recieves time from Netowrk Time Protocol (NTP) to control the lights
+
+  Green indicates class time or "go time"
+  Yellow indicates warning time or 5 minutes before the period ends
+  Red indicates passing time or lunch time (when class is not going on)
+  
+
+  The schedule times are in a multidimensional array and you can change the variable values to control which schedule you want to follow.
+  It runs the periods per "block" and tests to see if the converted time of hours and minutes is within a range of the block.
+  Once the time exceeds the first "block" the code proceeds to the next block and repeats until the day is over and is reset.
+
+  You can control which schedule the stoplight will follow by using the Adafruit IO dashboard "https://io.adafruit.com/tisnotgonnawork/dashboards/change-schedules" 
+
+  created 15 Nov 2022
+  by Clark Barayuga '23
+
+*/
+
+
 //needed for wifi credentials
 #include "config.h"
 // comment out the following lines if you are using fona or ethernet
@@ -18,14 +38,14 @@
 #define WARNING_TIME 5
 
 /******************************* WIFI **************************************/
-#define WIFI_SSID "TP-Link_51CA"
+#define WIFI_SSID "wifi"
 #define WIFI_PASS "password"
 /************************ Adafruit IO Config *******************************/
 
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
-#define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_FqPd90qJF8hAam1L6WUjzu8zfO5m"
+#define IO_USERNAME "username"
+#define IO_KEY "key"
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -65,8 +85,6 @@ unsigned char schStartVal = 0;
 unsigned char schEndVal = 0;
 unsigned char schJumpVal = 0;
 unsigned char lunchVal = 0;
-
-//
 int schIndex = 0;
 int block = schIndex;
 int nowTime = 460;
@@ -159,7 +177,7 @@ int schReg[65][2] {
   {14, 18}, // #47: 858
 
 
-  //EXTENDED ADVISORY ACTIVITY:
+  //EXTENDED ADVISORY SCHEDULE:
 
   //Index (48-63)
   // Block 0 (ADVISORY)
@@ -209,16 +227,14 @@ void setup() {
   int conv_time;
   int i;
 
-
+  // start the wifi connection
   WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-  //might need to comment * /
+  // will print out . until connected
+  // make sure to change WIFI_SSID and WIFI_PASS up top
   while ( WiFi.status() != WL_CONNECTED ) {
     delay ( 500 );
     Serial.print ( "." );
   }
-  //this section out * /
-
 
   timeClient.begin();
 
@@ -235,7 +251,8 @@ void setup() {
   schJump->onMessage(schJumpValue);
   lunch->onMessage(lunchValue);
 
-  // wait for a connection
+  // wait for a connection (will print out . until connected to Adafruit IO)
+  // make sure to change IO_USERNAME and IO_KEY  up top
   while (io.status() < AIO_CONNECTED) {
     Serial.print(".");
     delay(500);
@@ -288,7 +305,7 @@ void loop() {
   timeClient.update();
 
 
-  //Date and time print statements
+  // Date and time print statements
   // This prints out the #day of the week -> Serial.print(daysOfTheWeek[timeClient.getDay()]);
   //Serial.print(timeClient.getDay());
   //Serial.print(", ");
@@ -361,7 +378,7 @@ void loop() {
     Serial.print(" (WARNING)");
 
     // Passing time
-  } else if (nowTime >= endPeriod && nowTime <= nextPeriod) {
+  } else if (nowTime >= endPeriod && nowTime < nextPeriod) {
     Serial.print(" (PASSING)");
     digitalWrite(RED_PIN, LIGHT_ON);
     digitalWrite(YELLOW_PIN, LIGHT_OFF);
