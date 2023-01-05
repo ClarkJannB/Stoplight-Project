@@ -12,11 +12,13 @@
 
   You can control which schedule the stoplight will follow by using the Adafruit IO dashboard "https://io.adafruit.com/tisnotgonnawork/dashboards/change-schedules" 
 
-  created 15 Nov 2022
+  You can see the data being sent from the Feather Huzzah on the dashboard to see if it is connected. 
+  The seconds value will change every 3 seconds so that you know that the Feather is online and connected to the dashboard without the Serial monitor. 
+
+  created 23 Nov 2022
   by Clark Barayuga '23
 
 */
-
 
 //needed for wifi credentials
 #include "config.h"
@@ -27,7 +29,6 @@
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
-
 
 #define DAYLIGHTSAVINGS 0 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
 #define GREEN_PIN 5
@@ -63,12 +64,14 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS, SPIWIFI_SS,
 AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 #endif
 
-
 // set up the feeds
 AdafruitIO_Feed *schStart = io.feed("schStart");
 AdafruitIO_Feed *schEnd = io.feed("schEnd");
 AdafruitIO_Feed *schJump = io.feed("schJump");
 AdafruitIO_Feed *lunch = io.feed("lunch");
+AdafruitIO_Feed *Hour = io.feed("Hour");
+AdafruitIO_Feed *Minute = io.feed("Minute"); 
+AdafruitIO_Feed *Second = io.feed("Second"); 
 
 //offset for time zone
 const long utcOffsetInSeconds = -18000;
@@ -214,9 +217,6 @@ int convert_time(int hrs, int mns) {
   return conv_time;
 };
 
-
-
-
 void setup() {
 
   // start the serial connection
@@ -279,19 +279,14 @@ void setup() {
   convert_time(hrs, mins);
   int nowTime = conv_time;
 
-
-
   // Gets initial block
   for ( i = 0; i < 8; i += 2) {
     int startPeriod = convert_time(schReg[i][0], schReg[i][1]);
     int nextPeriod = convert_time(schReg[i + 2][0], schReg[i + 2][1]);
-
     if (nowTime >= startPeriod && nowTime <= nextPeriod) {
       break;
     }
-
   }
-
   block = i;
 }
 
@@ -301,9 +296,8 @@ void loop() {
   // function. it keeps the client connected to
   // io.adafruit.com, and processes any incoming data.
   io.run();
-
+  // update the time 
   timeClient.update();
-
 
   // Date and time print statements
   // This prints out the #day of the week -> Serial.print(daysOfTheWeek[timeClient.getDay()]);
@@ -328,7 +322,8 @@ void loop() {
   int endPeriod = convert_time(schReg[block + 1][0], schReg[block + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
   int nextPeriod = convert_time(schReg[block + 2][0], schReg[block + 2][1]);  //red is on between endPeriod and nextPeriod
 
-  //Uncomment to see the values of nowTime, StartPeriod, endPeriod, nextPeriod, and block
+  //comment to see the values of nowTime, StartPeriod, endPeriod, nextPeriod, and block on the Serial Monitor
+  /*
   Serial.print("nowTime: ");
   Serial.print(nowTime);
   Serial.print(" StartP: ");
@@ -342,7 +337,7 @@ void loop() {
   Serial.print("  ");
   Serial.print("Block: ");
   Serial.print(block / 2);
-
+  */
 
   //delay(1000);
 
@@ -418,15 +413,21 @@ void loop() {
     Serial.print(" FOLLOWING EXTENDED ADVISORY ACTIVITY");  
   }
 
+  // save time values to the feeds and dashboard to indicate whether Feather is connected
+  Hour->save(hrs); 
+  Minute->save(mins); 
+  Second->save(sec);
+
   Serial.println();
-  delay(1000);
+
+  // Adafruit IO is rate limited for publishing, so a delay is required in
+  // between feed->save events. In this example, we will wait three seconds 
+  delay(3000);
 }
 
-
-
-// this function is called whenever an 'digital' feed message
+// this function is called whenever a feed message
 // is received from Adafruit IO. it was attached to
-// the 'green' feed in the setup() function above.
+// the 'schStart' feed in the setup() function above.
 void schStartValue(AdafruitIO_Data * data) {
 
   //convert data to integer
