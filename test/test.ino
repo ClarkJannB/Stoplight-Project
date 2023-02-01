@@ -4,13 +4,13 @@
   Green indicates class time or "go time"
   Yellow indicates warning time or 5 minutes before the period ends
   Red indicates passing time or lunch time (when class is not going on)
-  
+
 
   The schedule times are in a multidimensional array and you can change the variable values to control which schedule you want to follow.
   It runs the periods per "block" and tests to see if the converted time of hours and minutes is within a range of the block.
   Once the time exceeds the first "block" the code proceeds to the next block and repeats until the day is over and is reset.
 
-  You can control which schedule the stoplight will follow by using the Adafruit IO dashboard "https://io.adafruit.com/tisnotgonnawork/dashboards/change-schedules" 
+  You can control which schedule the stoplight will follow by using the Adafruit IO dashboard "https://io.adafruit.com/tisnotgonnawork/dashboards/change-schedules"
 
   created 15 Nov 2022
   by Clark Barayuga '23
@@ -66,10 +66,11 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 
 
 // set up the feeds
-AdafruitIO_Feed *schStart = io.feed("schStart");
-AdafruitIO_Feed *schEnd = io.feed("schEnd");
+//AdafruitIO_Feed *schStart = io.feed("schStart");
+//AdafruitIO_Feed *schEnd = io.feed("schEnd");
 //AdafruitIO_Feed *schJump = io.feed("schJump");
-AdafruitIO_Feed *lunch = io.feed("lunch");
+//AdafruitIO_Feed *lunch = io.feed("lunch");
+AdafruitIO_Feed * scheduleControl = io.feed("scheduleControl");
 
 //offset for time zone
 const long utcOffsetInSeconds = -18000;
@@ -82,6 +83,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 
 //values that will be changed by the online variables from the dashboard
+unsigned char scheduleControlVal = 0;
 unsigned char schStartVal = 0;
 unsigned char schEndVal = 0;
 //unsigned char schJumpVal = 0;
@@ -247,10 +249,11 @@ void setup() {
   // the handleMessage function (defined below)
   // will be called whenever a message is
   // received from adafruit io.
-  schStart->onMessage(schStartValue);
-  schEnd->onMessage(schEndValue);
+  //schStart->onMessage(schStartValue);
+  //schEnd->onMessage(schEndValue);
   //schJump->onMessage(schJumpValue);
-  lunch->onMessage(lunchValue);
+  //lunch->onMessage(lunchValue);
+  scheduleControl->onMessage(scheduleControlValue);
 
   // wait for a connection (will print out . until connected to Adafruit IO)
   // make sure to change IO_USERNAME and IO_KEY  up top
@@ -264,10 +267,11 @@ void setup() {
   Serial.println(io.statusText());
 
   // make sure all feeds get their current values right away
-  schStart->get();
-  schEnd->get();
+  //schStart->get();
+  //schEnd->get();
   //schJump->get();
-  lunch->get();
+  //lunch->get();
+  scheduleControl->get();
 
   //Setup Pins (change value with defines up top)
   pinMode(GREEN_PIN, OUTPUT);
@@ -405,30 +409,52 @@ void loop() {
   }
 
   //Indicates which schedule the stoplight is following on the Serial monitor
-
-  if (schStartVal == 0 && schEndVal == 15 && lunchVal == 10) { 
+  //Can be used to control by using the scheduleControl dashboard variable
+  if (scheduleControlVal == 1) {
+    schStartVal == 0;
+    schEndVal == 15;
+    lunchVal == 10;
     Serial.print(" FOLLWING REGULAR SCHEDULE");
   }
-  if (schStartVal == 16 && schEndVal == 29) { 
-    Serial.print(" FOLLOWING EARLY RELEASE"); 
+  if (scheduleControlVal == 2) {
+    schStartVal == 16; 
+    schEndVal == 29;
+    Serial.print(" FOLLOWING EARLY RELEASE");
   }
-  if (schStartVal == 30 && schEndVal == 47 && lunchVal == 42){ 
-    Serial.print(" FOLLOWING ADVISORY ACTIVITY" ); 
+  if (scheduleControlVal == 3) {
+    schStartVal == 30; 
+    schEndVal == 47;
+    lunchVal == 42;
+    Serial.print(" FOLLOWING ADVISORY ACTIVITY" );
   }
-  if (schStartVal == 48 && schEndVal == 63 && lunchVal == 58) { 
-    Serial.print(" FOLLOWING EXTENDED ADVISORY ACTIVITY");  
+  if (scheduleControlVal == 4) {
+    schStartVal == 48;
+    schEndVal == 63;
+    lunchVal == 58;
+    Serial.print(" FOLLOWING EXTENDED ADVISORY ACTIVITY");
   }
 
   Serial.println();
   delay(1000);
 }
 
+void scheduleControlValue(AdafruitIO_Data * data) {
+  //convert data to integer
+  int scheduleControlRead = data->toInt();
+  Serial.print("received<-");
 
+  Serial.print(data->feedName());
+  Serial.print(" ");
+  //print out the received value
+  Serial.println(scheduleControlRead);
+  scheduleControlVal = scheduleControlRead;
+}
 
-// this function is called whenever an 'digital' feed message
-// is received from Adafruit IO. it was attached to
-// the 'green' feed in the setup() function above.
-void schStartValue(AdafruitIO_Data * data) {
+/*
+  // this function is called whenever an 'digital' feed message
+  // is received from Adafruit IO. it was attached to
+  // the 'green' feed in the setup() function above.
+  void schStartValue(AdafruitIO_Data * data) {
 
   //convert data to integer
   int schStartRead = data->toInt();
@@ -443,9 +469,9 @@ void schStartValue(AdafruitIO_Data * data) {
 
   schStartVal = schStartRead;
 
-}
+  }
 
-void schEndValue (AdafruitIO_Data * data) {
+  void schEndValue (AdafruitIO_Data * data) {
   //convert data to integer
   int schEndRead = data->toInt();
   Serial.print("received <-");
@@ -457,10 +483,10 @@ void schEndValue (AdafruitIO_Data * data) {
   Serial.println(schEndRead);
 
   schEndVal = schEndRead;
-}
+  }
 
-/*
-void schJumpValue (AdafruitIO_Data * data) {
+
+  void schJumpValue (AdafruitIO_Data * data) {
   //convert data to integer
   int schJumpRead = data->toInt();
   Serial.print("received <-");
@@ -472,10 +498,10 @@ void schJumpValue (AdafruitIO_Data * data) {
   Serial.println(schJumpRead);
 
   schJumpVal = schJumpRead;
-}
-*/ 
+  }
 
-void lunchValue (AdafruitIO_Data * data) {
+
+  void lunchValue (AdafruitIO_Data * data) {
   //convert data to integer
   int lunchRead = data->toInt();
   Serial.print("received <-");
@@ -487,4 +513,4 @@ void lunchValue (AdafruitIO_Data * data) {
   Serial.println(lunchRead);
 
   lunchVal = lunchRead;
-}
+*/
