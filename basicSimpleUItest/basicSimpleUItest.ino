@@ -306,13 +306,14 @@ void loop() {
   int endPeriod = convert_time(schReg[block + 1][0], schReg[block + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
   int nextPeriod = convert_time(schReg[block + 2][0], schReg[block + 2][1]);  //red is on between endPeriod and nextPeriod
 
+/*
   Serial.print(" schStartVal: ");
   Serial.print(schStartVal);
   Serial.print(" schEndVal: ");
   Serial.print(schEndVal);
   Serial.print(" lunchVal: ");
   Serial.print(lunchVal);
-
+*/ 
 
   schStartVal = schCnt[scheduleControlVal][0];
   schEndVal = schCnt[scheduleControlVal][1];
@@ -372,6 +373,7 @@ void loop() {
   if (digitalRead(RED_PIN) ==  LIGHT_ON) {
     Serial.print(" |RED|");
   }
+  
   //Indicates which schedule the stoplight is following on the Serial monitor
 
   if (schStartVal == 0 && schEndVal == 15 && lunchVal == 10) {
