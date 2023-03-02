@@ -28,7 +28,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_zsbm432FvWMCELYWLhj6w7VY2b8u" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_NVKw13FFr1yzR6LuPUjT0gIiVjg4" // <- Adafruit might reset this from time to time so make sure to check this is the same
 
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
@@ -59,6 +59,7 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 #define LIGHT_ON 1
 #define LIGHT_OFF 0
 #define WARNING_TIME 5
+#define CLEANUP_TIME 13 //13 minute offset from last period to turn yellow on when it's cleanup time (2:18 - 13 mins = 2:05 <- cleanup time start)
 
 //time setup
 //offset for time zone
@@ -322,22 +323,22 @@ void loop() {
     Serial.print(" lunchVal: ");
     Serial.print(lunchVal);
   */
-  
+
   //Uncomment to see the values of nowTime, StartPeriod, endPeriod, nextPeriod, and block on the Serial monitor
   /*
-  Serial.print("nowTime: ");
-  Serial.print(nowTime);
-  Serial.print(" StartP: ");
-  Serial.print(startPeriod);
-  Serial.print("  ");
-  Serial.print("EndP: ");
-  Serial.print(endPeriod);
-  Serial.print("  ");
-  Serial.print("NextP: ");
-  Serial.print(nextPeriod);
-  Serial.print("  ");
-  Serial.print("Block: ");
-  Serial.print(block / 2);
+    Serial.print("nowTime: ");
+    Serial.print(nowTime);
+    Serial.print(" StartP: ");
+    Serial.print(startPeriod);
+    Serial.print("  ");
+    Serial.print("EndP: ");
+    Serial.print(endPeriod);
+    Serial.print("  ");
+    Serial.print("NextP: ");
+    Serial.print(nextPeriod);
+    Serial.print("  ");
+    Serial.print("Block: ");
+    Serial.print(block / 2);
   */
 
 
@@ -359,6 +360,13 @@ void loop() {
     digitalWrite(YELLOW_PIN, LIGHT_OFF);
     digitalWrite(RED_PIN, LIGHT_ON);
     Serial.print(" (LUNCH)");
+
+    // Turn on yellow on cleanup time for the last period
+  } else if (block == 16 && nowTime < endPeriod - CLEANUP_TIME) {
+    digitalWrite(GREEN_PIN, LIGHT_OFF);
+    digitalWrite(YELLOW_PIN, LIGHT_ON);
+    digitalWrite(RED_PIN, LIGHT_OFF);
+    Serial.print(" (CLEANUP) ");
 
     // Class time
   } else if (nowTime < endPeriod - WARNING_TIME) {
