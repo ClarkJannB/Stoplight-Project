@@ -5,7 +5,6 @@
   Yellow indicates warning time or 5 minutes before the period ends
   Red indicates passing time or lunch time (when class is not going on)
 
-
   The schedule times are in a multidimensional array and you can change the variable values to control which schedule you want to follow.
   It runs the periods per "block" and tests to see if the converted time of hours and minutes is within a range of the block.
   Once the time exceeds the first "block" the code proceeds to the next block and repeats until the day is over and is reset.
@@ -13,6 +12,9 @@
   You can control which schedule the stoplight will follow by using the Adafruit IO dashboard "https://io.adafruit.com/tisnotgonnawork/dashboards/stoplight-schedule-control"
   created 2 Feb 2023
   by Clark Barayuga '23
+
+  Under MIT Licence
+  https://opensource.org/license/mit/
 */
 
 // comment out the following lines if you are using fona or ethernet
@@ -21,6 +23,7 @@
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
+
 /******************************* WIFI **************************************/
 #define WIFI_SSID "TP-Link_51CA"
 #define WIFI_PASS "password"
@@ -199,7 +202,6 @@ uint8_t schCnt[4][3] {
 };
 
 /*******VARIABLES****/
-
 int schIndex = 0;
 int block = schIndex;
 int nowTime = 460;
@@ -230,7 +232,7 @@ void setup() {
   // start the wifi connection
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   // will print out . until connected
-  // make sure to change WIFI_SSID and WIFI_PASS up top
+  // make sure to change WIFI_SSID and WIFI_PASS in the defines up top if not connecting within 1 min or so
   while ( WiFi.status() != WL_CONNECTED ) {
     delay ( 500 );
     Serial.print ( "." );
@@ -260,10 +262,11 @@ void setup() {
   Serial.println();
   Serial.println(io.statusText());
 
-  //make sure all feeds get their current values right away
+  // make sure the feed gets its current values right away
   scheduleControl->get();
 
-  //Setup Pins (change value with defines up top)
+  // setup pins (change value with defines up top)
+  // for Feather Huzzah make sure to avoid GPIO 0, 2, 15
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(YELLOW_PIN, OUTPUT);
   pinMode(RED_PIN, OUTPUT);
@@ -303,6 +306,7 @@ void loop() {
   Serial.print(timeClient.getSeconds());
   Serial.print(" ");
   //Serial.println(timeClient.getFormattedTime());
+  // ^ does the same thing as the previous serial statements
 
   int conv_time;
   int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
@@ -315,6 +319,7 @@ void loop() {
   int endPeriod = convert_time(schReg[block + 1][0], schReg[block + 1][1]); // yellow is on between endPeriod - 5 and endPeriod
   int nextPeriod = convert_time(schReg[block + 2][0], schReg[block + 2][1]);  //red is on between endPeriod and nextPeriod
 
+  //Uncomment to see the values of schStartVal, schEndVal, and lunchVal on the Serial monitor
   /*
     Serial.print(" schStartVal: ");
     Serial.print(schStartVal);
@@ -397,7 +402,6 @@ void loop() {
   }
 
   // Indicates which light is on from the Serial monitor
-
   if (digitalRead(GREEN_PIN) ==  LIGHT_ON) {
     Serial.print(" |GREEN|");
   }
@@ -409,7 +413,6 @@ void loop() {
   }
 
   // Indicates which schedule the stoplight is following on the Serial monitor
-
   if (schStartVal == schCnt[0][0] && schEndVal == schCnt[0][1] && lunchVal == schCnt[0][2]) {
     Serial.print(" FOLLWING REGULAR SCHEDULE");
   }
