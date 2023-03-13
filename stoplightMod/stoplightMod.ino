@@ -1,3 +1,6 @@
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+
 //Advisory, Lunch, Per 1-6, 
 
 //Period defines
@@ -17,6 +20,13 @@
 #define HLF     1
 #define AAC     2
 #define EXT     3
+
+
+const long utcOffsetInSeconds = -18000;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+
 
 int schedule[30][5] { 
   {7, 45, 4, ADV, REG},
@@ -57,11 +67,17 @@ int schedule[30][5] {
 }
 
 void setup() {
-  // put your setup code here, to run once:
+   timeClient.begin();
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  timeClient.update();
+  Serial.print(timeClient.getHours()); 
+  Serial.print(":");
+  Serial.print(timeClient.getMinutes());
+  Serial.print(":");
+  Serial.print(timeClient.getSeconds());
+  Serial.println(" ");
 
 }
