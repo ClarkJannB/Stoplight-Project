@@ -1,3 +1,9 @@
+/*
+  Add in warning time in the array
+  Replace the total with sizeOf in the for loop
+  Move the period type out of the conditional
+*/
+
 #include "AdafruitIO_WiFi.h"
 
 #include <NTPClient.h>
@@ -32,12 +38,22 @@
 #define AAC     2
 #define EXT     3
 
+//Array defines 
+#define HOURS         0
+#define MINUTES       1 
+#define DURATION      2 
+#define PERIOD        3
+#define SCHEDULE      4
+
+
 
 const long utcOffsetInSeconds = -18000;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
+
+int scheduleType = EXT;
 
 int schedule[32][5] {
   {7, 45, 4, ADV, REG},
@@ -119,20 +135,25 @@ void loop() {
 
   for (int i = 0; i < 31; i++) {
 
-
-    int periodStartTime = convert_time(schedule[i][0], schedule[i][1]);
-    int periodEndTime = periodStartTime + schedule[i][2];
+    int periodStartTime = convert_time(schedule[i][HOURS], schedule[i][MINUTES]);
+    int periodEndTime = periodStartTime + schedule[i][DURATION];
     int periodWarningTime = periodEndTime - 5;
 
 
-    if (nowTime >= periodStartTime && nowTime <= periodWarningTime && schedule[i][4] == EXT ) {
+    //Class time turn on Green
+    if (nowTime >= periodStartTime && nowTime <= periodWarningTime && schedule[i][SCHEDULE] == scheduleType ) {
       //Green light
       Serial.print("GREEN ");
-      Serial.print(schedule[i][3]); 
+      Serial.print(schedule[i][PERIOD]);
       Serial.print(" ");
       Serial.println(i);
+    } else if (nowTime < periodWarningTime && nowTime <= schedule[i][SCHEDULE]) {
+      Serial.print("YELLOW ");
+      Serial.print(schedule[i][PERIOD]);
+      Serial.print(" ");
+      Serial.println(i); 
     }
 
   }
-  delay(500); 
+  delay(500);
 }
