@@ -2,6 +2,8 @@
   Add in warning time in the array
   Replace the total with sizeOf in the for loop
   Move the period type out of the conditional
+  Debug mode
+  Double check all greater than and less than or equal to signs
 */
 
 #include "AdafruitIO_WiFi.h"
@@ -38,10 +40,10 @@
 #define AAC     2
 #define EXT     3
 
-//Array defines 
+//Array defines
 #define HOURS         0
-#define MINUTES       1 
-#define DURATION      2 
+#define MINUTES       1
+#define DURATION      2
 #define PERIOD        3
 #define SCHEDULE      4
 
@@ -52,8 +54,9 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
-
-int scheduleType = EXT;
+char periodName[9][10] {"Advisory", "Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6", "Lunch", "Activity"};
+int scheduleType = REG;
+int nowTime = 460;
 
 int schedule[32][5] {
   {7, 45, 4, ADV, REG},
@@ -94,12 +97,17 @@ int schedule[32][5] {
 };
 
 // Converts the hours and minutes of the array into # of minutes since 12:00 am
-int convert_time(int hrs, int mns) {
-  int conv_time;
-  conv_time = hrs * 60;
-  conv_time = conv_time + mns;
-  return conv_time;
+int hoursMinToMinTotal(int hrs, int mns) {
+  return hrs * 60 + mns;
 };
+
+uint8_t minTotalToHours (uint16_t minTotal) {
+  return minTotal /= 60;
+}
+
+uint8_t minTotalToMins (uint16_t minTotal) {
+  return minTotal %= 60;
+}
 
 
 void setup() {
@@ -121,39 +129,65 @@ void setup() {
 
 void loop() {
 
-  timeClient.update();
-  int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
-  int mins = timeClient.getMinutes();
-  int secs = timeClient.getSeconds();
-  int nowTime = convert_time(hrs, mins);
+  //  timeClient.update();
+  //  int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
+  //  int mins = timeClient.getMinutes();
+  //  int secs = timeClient.getSeconds();
+  //  int nowTime = hoursMinToMinTotal(hrs, mins);
+
+  nowTime++;
+  int hrs = minTotalToHours(nowTime);
+  int mins = minTotalToMins(nowTime);
+  delay(100);
+
+
   Serial.print(hrs);
   Serial.print(":");
   Serial.print(mins);
   Serial.print(":");
-  Serial.print(secs);
-  Serial.println(" ");
+  //  Serial.print(secs);
+  //  Serial.println(" ");
 
   for (int i = 0; i < 31; i++) {
 
-    int periodStartTime = convert_time(schedule[i][HOURS], schedule[i][MINUTES]);
-    int periodEndTime = periodStartTime + schedule[i][DURATION];
-    int periodWarningTime = periodEndTime - 5;
+
+    if (schedule[i][SCHEDULE] == scheduleType) {
+
+      int periodStartTime = hoursMinToMinTotal(schedule[i][HOURS], schedule[i][MINUTES]);
+      int periodEndTime = periodStartTime + schedule[i][DURATION];
+      int periodWarningTime = periodEndTime - 5;
+      int nextPeriodTime = hoursMinToMinTotal(schedule[i+1][HOURS], schedule[i+1][MINUTES]); 
 
 
-    //Class time turn on Green
-    if (nowTime >= periodStartTime && nowTime <= periodWarningTime && schedule[i][SCHEDULE] == scheduleType ) {
-      //Green light
-      Serial.print("GREEN ");
-      Serial.print(schedule[i][PERIOD]);
-      Serial.print(" ");
-      Serial.println(i);
-    } else if (nowTime < periodWarningTime && nowTime <= schedule[i][SCHEDULE]) {
-      Serial.print("YELLOW ");
-      Serial.print(schedule[i][PERIOD]);
-      Serial.print(" ");
-      Serial.println(i); 
+      //Class time turn on Green
+      if (nowTime > periodStartTime && nowTime <= periodWarningTime) {
+        //Green light
+        Serial.print("GREEN ");
+        Serial.print(periodName[schedule[i][PERIOD]]);
+        Serial.print(" ");
+        Serial.print(i);
+        Serial.print(" ");
+      } else if (nowTime > periodWarningTime && nowTime <= periodEndTime) {
+        Serial.print("YELLOW ");
+        Serial.print(periodName[schedule[i][PERIOD]]);
+        Serial.print(" ");
+        Serial.print(i);
+        Serial.print(" ");
+      } else if (nowTime > periodEndTime && nowTime <= nextPeriodTime) { 
+        Serial.print("RED ");
+        Serial.print(periodName[schedule[i][PERIOD]]);
+        Serial.print(" ");
+        Serial.print(i);
+        Serial.print(" ");
+      }
+
     }
+}
+Serial.println(nowTime);
 
+  if (nowTime > 800) {
+    nowTime = 400;
   }
-  delay(500);
+
+  //  delay(500);
 }
