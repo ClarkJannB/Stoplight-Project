@@ -8,6 +8,10 @@
 #define WIFI_SSID "TP-Link_51CA"
 #define WIFI_PASS "password"
 
+
+
+#define DAYLIGHTSAVINGS 1 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
+
 //Advisory, Lunch, Per 1-6,
 
 //Period defines
@@ -35,7 +39,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 
-int schedule[35][5] {
+int schedule[32][5] {
   {7, 45, 4, ADV, REG},
   {7, 52, 56, PR1, REG},
   {8, 51, 56, PR2, REG},
@@ -73,9 +77,18 @@ int schedule[35][5] {
 
 };
 
+// Converts the hours and minutes of the array into # of minutes since 12:00 am
+int convert_time(int hrs, int mns) {
+  int conv_time;
+  conv_time = hrs * 60;
+  conv_time = conv_time + mns;
+  return conv_time;
+};
+
+
 void setup() {
   Serial.begin(115200);
-  
+
   // start the wifi connection
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   // will print out . until connected
@@ -84,18 +97,42 @@ void setup() {
     delay ( 500 );
     Serial.print ( "." );
   }
-  
+
   timeClient.begin();
+
+
 }
 
 void loop() {
-  
+
   timeClient.update();
-  Serial.print(timeClient.getHours());
+  int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
+  int mins = timeClient.getMinutes();
+  int secs = timeClient.getSeconds();
+  int nowTime = convert_time(hrs, mins);
+  Serial.print(hrs);
   Serial.print(":");
-  Serial.print(timeClient.getMinutes());
+  Serial.print(mins);
   Serial.print(":");
-  Serial.print(timeClient.getSeconds());
+  Serial.print(secs);
   Serial.println(" ");
 
+  for (int i = 0; i < 31; i++) {
+
+
+    int periodStartTime = convert_time(schedule[i][0], schedule[i][1]);
+    int periodEndTime = periodStartTime + schedule[i][2];
+    int periodWarningTime = periodEndTime - 5;
+
+
+    if (nowTime >= periodStartTime && nowTime <= periodWarningTime && schedule[i][4] == EXT ) {
+      //Green light
+      Serial.print("GREEN ");
+      Serial.print(schedule[i][3]); 
+      Serial.print(" ");
+      Serial.println(i);
+    }
+
+  }
+  delay(500); 
 }
