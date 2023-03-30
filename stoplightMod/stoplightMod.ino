@@ -3,6 +3,9 @@
   Move the period type out of the conditional
   Debug mode
   Double check all greater than and less than or equal to signs
+  Outside of school indicator before 7:40
+  Between 7:40 and 7:45 warning time
+ 
 */
 // comment out the following lines if you are using fona or ethernet
 #include "AdafruitIO_WiFi.h"
@@ -14,11 +17,13 @@
 ///******************************* WIFI **************************************///
 #define WIFI_SSID "TP-Link_51CA"
 #define WIFI_PASS "password"
+
+
 ///************************ Adafruit IO Config *******************************///
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_jyyj36jqCPnFHOqxYuhC9To7G9iR" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_ASWU03FM3LrFXqjCbL5JiALnp86D" // <- Adafruit might reset this from time to time so make sure to check this is the same
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -35,17 +40,19 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS, SPIWIFI_SS,
 #else
 AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 #endif
+
+
 ///***************************** FEED(S) *************************************///
 //trying to use only one variable to control all other vals
 AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 
 
 #define DAYLIGHTSAVINGS 1 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
-#define GREEN_PIN 4
-#define YELLOW_PIN 15
-#define RED_PIN 5
-#define LIGHT_ON 1
-#define LIGHT_OFF 0
+#define GREEN_PIN   4
+#define YELLOW_PIN  15
+#define RED_PIN     5
+#define LIGHT_ON    1
+#define LIGHT_OFF   0
 
 //Advisory, Lunch, Per 1-6,
 //Period defines
@@ -58,6 +65,7 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 #define PR6      6
 #define LUN      7
 #define ACT      8
+
 
 
 //Schedule defines
@@ -74,6 +82,12 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 #define PERIOD        4
 #define SCHEDULE      5
 
+//Outschool time defines
+#define DAYSTART          460
+#define SCHOOLSTARTWARN   465
+#define DAYEND            858
+#define NOONEND           720
+
 //time setup
 //offset for time zone
 const long utcOffsetInSeconds = -18000;
@@ -81,14 +95,15 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
-char periodName[9][10] {"Advisory", "Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6", "Lunch", "Activity"};
+char periodName[9][10] {"Advisory", "Period_1", "Period_2", "Period_3", "Period_4", "Period_5", "Period_6", "Lunch", "Activity"};
+char scheduleName[4][12] {"Regular", "Half_Day", "AdvisoryAct", "ExtendedAdv"};
 
 //int scheduleControlVal = 0;
 
 int scheduleType = REG; //<- variable that is changing
 
 
-int nowTime = 460;
+int nowTime = 450;
 int i;
 
 //{HOURS, MINS, PERIOD LENGTH, WARNING TIME, PERIOD TYPE, SCHEDULE}
@@ -100,8 +115,7 @@ uint8_t schedule[32][6] {
   {10, 51, 56, 5, PR4, REG},
   {11, 50, 30, 5, LUN, REG},
   {12, 23, 56, 5, PR5, REG},
-  {13, 22, 56, 15, PR6, REG},
-
+  {13, 22, 56, 13, PR6, REG},
   {7, 45, 5, 0, ADV, HLF},
   {7, 53, 42, 5, PR1, HLF},
   {8, 38, 38, 5, PR2, HLF},
@@ -109,7 +123,6 @@ uint8_t schedule[32][6] {
   {10, 0, 38, 5, PR4, HLF},
   {10, 41, 36, 5, PR5, HLF},
   {11, 22, 38, 15, PR6, HLF},
-
   {7, 45, 5, 0,  ADV, AAC},
   {7, 53, 48, 5, PR1, AAC},
   {8, 44, 48, 5, PR2, AAC},
@@ -118,8 +131,7 @@ uint8_t schedule[32][6] {
   {11, 48, 48, 5, PR4, AAC},
   {12, 6, 30, 5, LUN, AAC},
   {12, 39, 48, 5, PR5, AAC},
-  {13, 30, 48, 15, PR6, AAC},
-
+  {13, 30, 48, 13, PR6, AAC},
   {7, 45, 30, 0, ADV, EXT},
   {8, 18, 52, 5, PR1, EXT},
   {9, 13, 52, 5, PR2, EXT},
@@ -127,7 +139,8 @@ uint8_t schedule[32][6] {
   {11, 3, 55, 5, PR4, EXT},
   {11, 58, 30, 5, LUN, EXT},
   {12, 31, 52, 5, PR5, EXT},
-  {13, 26, 52, 15, PR6, EXT},
+  {13, 26, 52, 13, PR6, EXT},
+ 
 
 
 
@@ -192,6 +205,8 @@ void setup() {
 }
 
 void loop() {
+  io.run();
+
 
   //  timeClient.update();
   //  int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
@@ -203,7 +218,7 @@ void loop() {
   nowTime++;
   int hrs = minTotalToHours(nowTime);
   int mins = minTotalToMins(nowTime);
-  delay(100);
+  delay(10);
 
 
 
@@ -213,55 +228,57 @@ void loop() {
   Serial.print(":");
   //  Serial.print(secs);
   //  Serial.println(" ");
+  if (nowTime < DAYSTART) {
+    Serial.print("BEFORE SCHOOL ");
+    //Turn on yellow before advisory
+  } else if (nowTime >= DAYSTART && nowTime < SCHOOLSTARTWARN) {
+    Serial.print("YELLOW ");
+  } else if ((nowTime >= DAYEND && scheduleType != HLF) || (nowTime >= NOONEND && scheduleType == HLF)) {
+    Serial.print("END OF DAY "); 
+  } else {
+    for (i = 0; i <= 31; i++) {
+      
 
-  for (i = 0; i < 31; i++) {
+      if (schedule[i][SCHEDULE] == scheduleType) {
 
-    if (schedule[i][SCHEDULE] == scheduleType) {
+        int periodStartTime = hoursMinToMinTotal(schedule[i][HOURS], schedule[i][MINUTES]);
+        int periodEndTime = periodStartTime + schedule[i][DURATION];
+        int periodWarningTime = periodEndTime - schedule[i][WARNINGTIME];
+        int nextPeriodTime = hoursMinToMinTotal(schedule[i + 1][HOURS], schedule[i + 1][MINUTES]);
+        //int periodIndex = schedule[i][4];
 
-      int periodStartTime = hoursMinToMinTotal(schedule[i][HOURS], schedule[i][MINUTES]);
-      int periodEndTime = periodStartTime + schedule[i][DURATION];
-      int periodWarningTime = periodEndTime - schedule[i][WARNINGTIME];
-      int nextPeriodTime = hoursMinToMinTotal(schedule[i + 1][HOURS], schedule[i + 1][MINUTES]);
-
-      //Class time turn on Green
-      if (nowTime > periodStartTime && nowTime <= periodWarningTime) {
-        //Lunch time turn on Red
-        if (schedule[i][PERIOD] == LUN) {
-          Serial.print("LUNCH RED");
+        //Class time turn on Green
+        if (nowTime >= periodStartTime && nowTime < periodWarningTime) {
+          //Lunch time turn on Red
+          if (schedule[i][PERIOD] == LUN) {
+            Serial.print(" LUNCH RED");
+            periodValue = i;
+          }
+          //Green light
+          Serial.print(" GREEN ");
           periodValue = i;
-        }
-        //Green light
-        Serial.print("GREEN ");
-        periodValue = i;
-        
-        //Warning time turn on Yellow
-      } else if (nowTime > periodWarningTime && nowTime <= periodEndTime) {
-        Serial.print("YELLOW ");
-        periodValue = i;
 
-
-
-        //Passing time
-      } else if (nowTime > periodEndTime && nowTime <= nextPeriodTime) {
-        Serial.print("RED ");
-        periodValue = i;
-
-
-
+          //Warning time turn on Yellow
+        } else if (nowTime >= periodWarningTime && nowTime < periodEndTime) {
+          Serial.print(" YELLOW ");
+          periodValue = i;
+          //Passing time
+        } else if (nowTime >= periodEndTime && nowTime < nextPeriodTime) {
+          Serial.print(" RED ");
+          periodValue = i;
+        } 
       }
-
     }
-
-
   }
   Serial.print(nowTime);
   Serial.print(" ");
   Serial.print(periodName[schedule[periodValue][PERIOD]]);
   Serial.print(" ");
+  Serial.print("periodValue: ");
   Serial.print(periodValue);
-  Serial.print(" ScheduleType: "); 
-  Serial.print(scheduleType); 
-  Serial.println(" ");
+  Serial.print(" Following Schedule: ");
+  Serial.print(scheduleName[scheduleType]);
+  Serial.println(); 
 
 
   if (nowTime > 900) {
