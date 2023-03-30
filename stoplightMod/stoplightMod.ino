@@ -2,9 +2,6 @@
   Replace the total with sizeOf in the for loop
   Move the period type out of the conditional
   Debug mode
-  Double check all greater than and less than or equal to signs
-  Outside of school indicator before 7:40
-  Between 7:40 and 7:45 warning time
  
 */
 // comment out the following lines if you are using fona or ethernet
