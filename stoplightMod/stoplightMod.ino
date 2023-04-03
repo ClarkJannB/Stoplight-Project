@@ -19,7 +19,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_ZwFu21TlAlPPj9Gz9wusOHNMDHWY" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_YmYa75J0gPPnBb9pmyxGPdVAh4ma" // <- Adafruit might reset this from time to time so make sure to check this is the same
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -44,7 +44,8 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 
 
 ///*******  DEBUG MODE  *******///
-#define DEBUG
+//change from true to false to turn debug mode on or off
+#define DEBUG false
 
 #define DAYLIGHTSAVINGS 1 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
 #define GREEN_PIN   4
@@ -134,7 +135,7 @@ uint8_t schedule[32][6] {
   {8, 44, 48, 5, PR2, AAC},
   {9, 35, 44, 5, ACT, AAC},
   {10, 22, 48, 5, PR3, AAC},
-  {11, 48, 48, 5, PR4, AAC},
+  {11, 15, 48, 5, PR4, AAC},
   {12, 6, 30, 5, LUN, AAC},
   {12, 39, 48, 5, PR5, AAC},
   {13, 30, 48, 13, PR6, AAC},
@@ -208,37 +209,23 @@ void loop() {
   uint8_t periodValue = 0;
   io.run();
 
-  ///DEBUG
-  //  timeClient.update();
-  //  int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
-  //  int mins = timeClient.getMinutes();
-  //  int secs = timeClient.getSeconds();
-  //  int nowTime = hoursMinToMinTotal(hrs, mins);
-
   //DEBUG
-#ifdef DEBUG
+#if DEBUG == true
   nowTime++;
+  int day = 6; //<- placeholder value for day
   int hrs = minTotalToHours(nowTime);
   int mins = minTotalToMins(nowTime);
   if (nowTime > 900) {
     nowTime = 400;
   }
-#elif
-    timeClient.update();
-    int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
-    int mins = timeClient.getMinutes();
-    int secs = timeClient.getSeconds();
-    int nowTime = hoursMinToMinTotal(hrs, mins);
+#else DEBUG == false
+  timeClient.update();
+  int day = timeClient.getDay();
+  int hrs = timeClient.getHours() + DAYLIGHTSAVINGS;
+  int mins = timeClient.getMinutes();
+  int secs = timeClient.getSeconds();
+  int nowTime = hoursMinToMinTotal(hrs, mins);
 #endif
-
-  //Serial.print(" ");
-
-  //Serial.print(" ");
-  //Serial.print("periodValue: ");
-
-  //Serial.print(" Following Schedule: ");
-
-
 
   //Determines if time is before school overall
   if (nowTime < DAYSTART) {
@@ -311,7 +298,7 @@ void loop() {
       // Serial.print("LUNCH RED ");
       break;
   }
-#ifdef DEBUG
+  //#if DEBUG == true
   Serial.print(hrs);
   Serial.print(':');
   Serial.print(mins);
@@ -325,8 +312,10 @@ void loop() {
   Serial.print(periodValue);
   Serial.print(' ');
   Serial.print(scheduleName[scheduleType]);
+  Serial.print(' ');
+  Serial.print(daysOfTheWeek[day]);
   Serial.println();
-#endif
+  //#endif
 
 }
 
