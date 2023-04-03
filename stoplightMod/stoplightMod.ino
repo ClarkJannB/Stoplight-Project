@@ -17,7 +17,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_rjJT089WOuearMpQyKtAM2Ds8ARO" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_YECe518ozUaevBk2vkEd9qMfggNC" // <- Adafruit might reset this from time to time so make sure to check this is the same
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -43,7 +43,7 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 
 ///*******  DEBUG MODE  *******///
 //change from true to false to turn debug mode on or off
-#define DEBUG true
+#define DEBUG false
 
 #define DAYLIGHTSAVINGS   1 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
 #define GREEN_PIN         4
@@ -201,6 +201,11 @@ void setup() {
   //make sure all feeds get their current values right away
   scheduleControl->get();
 
+  //Setup Pins (change value with defines up top)
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(YELLOW_PIN, OUTPUT);
+  pinMode(RED_PIN, OUTPUT);
+
 }
 
 void loop() {
@@ -211,9 +216,10 @@ void loop() {
   //DEBUG
 #if DEBUG == true
   nowTime++;
-  int day = 0; //<- placeholder value for day
+  int day = 4; //<- placeholder value for day
   int hrs = minTotalToHours(nowTime);
   int mins = minTotalToMins(nowTime);
+  //resets nowTime counter
   if (nowTime > 900) {
     nowTime = 400;
   }
@@ -228,8 +234,9 @@ void loop() {
 #endif
 
   if ((day == SATURDAY) || (day == SUNDAY)) {
-    //lights off
-    Serial.print("WEEKEND");
+    digitalWrite(GREEN_PIN, LIGHT_OFF);
+    digitalWrite(YELLOW_PIN, LIGHT_OFF);
+    digitalWrite(RED_PIN, LIGHT_OFF);
   } else {
     //Determines if time is before school overall
     if (nowTime < DAYSTART) {
@@ -273,49 +280,55 @@ void loop() {
     }
   }
 
-switch (lightState) {
-case BEFORE:
-  //turn all lights off
-  // Serial.print("(BEFORE) ALL LIGHTS OFF");
-  break;
-case ENDDAY:
-  //turn all lights off
-  // Serial.print("(AFTER) ALL LIGHTS OFF");
-  break;
-case CLASS:
-  //turn green light on
-  // Serial.print("GREEN ");
-  break;
-case WARNIN:
-  //turn yellow light on
-  //  Serial.print("YELLOW ");
-  break;
-case PASSIN:
-  //turn red light on
-  //  Serial.print("RED ");
-  break;
-case LUNCH:
-  //turn red light on
-  // Serial.print("LUNCH RED ");
-  break;
-}
+  switch (lightState) {
+    case BEFORE:
+      digitalWrite(GREEN_PIN, LIGHT_OFF);
+      digitalWrite(YELLOW_PIN, LIGHT_OFF);
+      digitalWrite(RED_PIN, LIGHT_OFF);
+      break;
+    case ENDDAY:
+      digitalWrite(GREEN_PIN, LIGHT_OFF);
+      digitalWrite(YELLOW_PIN, LIGHT_OFF);
+      digitalWrite(RED_PIN, LIGHT_OFF);
+      break;
+    case CLASS:
+      digitalWrite(GREEN_PIN, LIGHT_ON);
+      digitalWrite(YELLOW_PIN, LIGHT_OFF);
+      digitalWrite(RED_PIN, LIGHT_OFF);
+      break;
+    case WARNIN:
+      digitalWrite(GREEN_PIN, LIGHT_OFF);
+      digitalWrite(YELLOW_PIN, LIGHT_ON);
+      digitalWrite(RED_PIN, LIGHT_OFF);
+      break;
+    case PASSIN:
+      digitalWrite(GREEN_PIN, LIGHT_OFF);
+      digitalWrite(YELLOW_PIN, LIGHT_OFF);
+      digitalWrite(RED_PIN, LIGHT_ON);
+      break;
+    case LUNCH:
+      digitalWrite(GREEN_PIN, LIGHT_ON);
+      digitalWrite(YELLOW_PIN, LIGHT_OFF);
+      digitalWrite(RED_PIN, LIGHT_ON);
+      break;
+  }
 
-Serial.print(hrs);
-Serial.print(':');
-Serial.print(mins);
-Serial.print(':');
-Serial.print(nowTime);
-Serial.print(' ');
-Serial.print(stateName[lightState]);
-Serial.print(' ');
-Serial.print(periodName[schedule[periodValue][PERIOD]]);
-Serial.print(' ');
-Serial.print(periodValue);
-Serial.print(' ');
-Serial.print(scheduleName[scheduleType]);
-Serial.print(' ');
-Serial.print(daysOfTheWeek[day]);
-Serial.println();
+  Serial.print(hrs);
+  Serial.print(':');
+  Serial.print(mins);
+  Serial.print(':');
+  Serial.print(nowTime);
+  Serial.print(' ');
+  Serial.print(stateName[lightState]);
+  Serial.print(' ');
+  Serial.print(periodName[schedule[periodValue][PERIOD]]);
+  Serial.print(' ');
+  Serial.print(periodValue);
+  Serial.print(' ');
+  Serial.print(scheduleName[scheduleType]);
+  Serial.print(' ');
+  Serial.print(daysOfTheWeek[day]);
+  Serial.println();
 
 }
 
