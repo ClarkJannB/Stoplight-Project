@@ -1,8 +1,6 @@
 /*
   Replace the total with sizeOf in the for loop
   Move the period type out of the conditional
-  Debug mode
-  Determine weekend schedule
 */
 // comment out the following lines if you are using fona or ethernet
 #include "AdafruitIO_WiFi.h"
@@ -19,7 +17,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_YmYa75J0gPPnBb9pmyxGPdVAh4ma" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_rjJT089WOuearMpQyKtAM2Ds8ARO" // <- Adafruit might reset this from time to time so make sure to check this is the same
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -45,57 +43,59 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 
 ///*******  DEBUG MODE  *******///
 //change from true to false to turn debug mode on or off
-#define DEBUG false
+#define DEBUG true
 
-#define DAYLIGHTSAVINGS 1 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
-#define GREEN_PIN   4
-#define YELLOW_PIN  15
-#define RED_PIN     5
-#define LIGHT_ON    1
-#define LIGHT_OFF   0
+#define DAYLIGHTSAVINGS   1 //Change either to 1 or 0 depending on daylight savings. 0 = fall back (no daylight savings)
+#define GREEN_PIN         4
+#define YELLOW_PIN        15
+#define RED_PIN           5
+#define LIGHT_ON          1
+#define LIGHT_OFF         0
 
 //Advisory, Lunch, Per 1-6,
 //Period defines
-#define ADV      0
-#define PR1      1
-#define PR2      2
-#define PR3      3
-#define PR4      4
-#define PR5      5
-#define PR6      6
-#define LUN      7
-#define ACT      8
+#define ADV               0
+#define PR1               1
+#define PR2               2
+#define PR3               3
+#define PR4               4
+#define PR5               5
+#define PR6               6
+#define LUN               7
+#define ACT               8
 
 //Schedule defines
-#define REG     0
-#define HLF     1
-#define AAC     2
-#define EXT     3
+#define REG               0
+#define HLF               1
+#define AAC               2
+#define EXT               3
 
 //Array defines
-#define HOURS         0
-#define MINUTES       1
-#define DURATION      2
-#define WARNINGTIME   3
-#define PERIOD        4
-#define SCHEDULE      5
+#define HOURS             0
+#define MINUTES           1
+#define DURATION          2
+#define WARNINGTIME       3
+#define PERIOD            4
+#define SCHEDULE          5
 
 //State defines
-#define BEFORE        0
-#define ENDDAY        1
-#define CLASS         2
-#define WARNIN        3
-#define PASSIN        4
-#define LUNCH         5
+#define BEFORE            0
+#define ENDDAY            1
+#define CLASS             2
+#define WARNIN            3
+#define PASSIN            4
+#define LUNCH             5
 
 //Outschool time defines
 #define DAYSTART          460
 #define SCHOOLSTARTWARN   465
 #define DAYEND            858
 #define NOONEND           720
+#define SATURDAY          6
+#define SUNDAY            0
 
 //time setup
-//offset for time zone
+//offset for time zone (in seconds)
 const long utcOffsetInSeconds = -18000;
 
 WiFiUDP ntpUDP;
@@ -147,7 +147,6 @@ uint8_t schedule[32][6] {
   {11, 58, 30, 5, LUN, EXT},
   {12, 31, 52, 5, PR5, EXT},
   {13, 26, 52, 13, PR6, EXT},
-
 };
 
 // Converts the hours and minutes of the array into # of minutes since 12:00 am
@@ -212,7 +211,7 @@ void loop() {
   //DEBUG
 #if DEBUG == true
   nowTime++;
-  int day = 6; //<- placeholder value for day
+  int day = 0; //<- placeholder value for day
   int hrs = minTotalToHours(nowTime);
   int mins = minTotalToMins(nowTime);
   if (nowTime > 900) {
@@ -225,97 +224,98 @@ void loop() {
   int mins = timeClient.getMinutes();
   int secs = timeClient.getSeconds();
   int nowTime = hoursMinToMinTotal(hrs, mins);
+  delay(100);
 #endif
 
-  //Determines if time is before school overall
-  if (nowTime < DAYSTART) {
-    lightState = BEFORE;
-    // Serial.print("BEFORE SCHOOL ");
-    //Turn on yellow before advisory
-  } else if (nowTime >= DAYSTART && nowTime < SCHOOLSTARTWARN) {
-    // Serial.print("YELLOW ");
-    lightState = WARNIN;
-    //First conditonal: check if time is outside of school for all schedules except half day
-    //Second conditional: check if time is outside of school for noon release during half day
-  } else if ((nowTime >= DAYEND && scheduleType != HLF) || (nowTime >= NOONEND && scheduleType == HLF)) {
-    //Serial.print("END OF DAY ");
-    lightState = ENDDAY;
+  if ((day == SATURDAY) || (day == SUNDAY)) {
+    //lights off
+    Serial.print("WEEKEND");
   } else {
-    for (i = 0; i <= 31; i++) {
-      if (schedule[i][SCHEDULE] == scheduleType) {
-
-        int periodStartTime = hoursMinToMinTotal(schedule[i][HOURS], schedule[i][MINUTES]);
-        int periodEndTime = periodStartTime + schedule[i][DURATION];
-        int periodWarningTime = periodEndTime - schedule[i][WARNINGTIME];
-        int nextPeriodTime = hoursMinToMinTotal(schedule[i + 1][HOURS], schedule[i + 1][MINUTES]);
-
-        //Class time turn on Green
-        if (nowTime >= periodStartTime && nowTime < periodWarningTime) {
-          //Lunch time turn on Red
-          if (schedule[i][PERIOD] == LUN) {
-            lightState = LUNCH;
+    //Determines if time is before school overall
+    if (nowTime < DAYSTART) {
+      lightState = BEFORE;
+      //Turn on yellow before advisory
+    } else if (nowTime >= DAYSTART && nowTime < SCHOOLSTARTWARN) {
+      lightState = WARNIN;
+      //First conditonal: check if time is outside of school for all schedules except half day
+      //Second conditional: check if time is outside of school for noon release during half day
+    } else if ((nowTime >= DAYEND && scheduleType != HLF) || (nowTime >= NOONEND && scheduleType == HLF)) {
+      lightState = ENDDAY;
+    } else {
+      for (i = 0; i <= 31; i++) {
+        if (schedule[i][SCHEDULE] == scheduleType) {
+          int periodStartTime = hoursMinToMinTotal(schedule[i][HOURS], schedule[i][MINUTES]);
+          int periodEndTime = periodStartTime + schedule[i][DURATION];
+          int periodWarningTime = periodEndTime - schedule[i][WARNINGTIME];
+          int nextPeriodTime = hoursMinToMinTotal(schedule[i + 1][HOURS], schedule[i + 1][MINUTES]);
+          //Class time turn on Green
+          if (nowTime >= periodStartTime && nowTime < periodWarningTime) {
+            //Lunch time turn on Red
+            if (schedule[i][PERIOD] == LUN) {
+              lightState = LUNCH;
+              periodValue = i;
+            } else {
+              //Green light
+              lightState = CLASS;
+              periodValue = i;
+            }
+            //Warning time turn on Yellow
+          } else if (nowTime >= periodWarningTime && nowTime < periodEndTime) {
+            lightState = WARNIN;
             periodValue = i;
-          } else {
-            //Green light
-            lightState = CLASS;
+            //Passing time
+          } else if (nowTime >= periodEndTime && nowTime < nextPeriodTime) {
+            lightState = PASSIN;
             periodValue = i;
           }
-          //Warning time turn on Yellow
-        } else if (nowTime >= periodWarningTime && nowTime < periodEndTime) {
-          lightState = WARNIN;
-          periodValue = i;
-          //Passing time
-        } else if (nowTime >= periodEndTime && nowTime < nextPeriodTime) {
-          lightState = PASSIN;
-          periodValue = i;
         }
       }
     }
   }
-  switch (lightState) {
-    case BEFORE:
-      //turn all lights off
-      // Serial.print("(BEFORE) ALL LIGHTS OFF");
-      break;
-    case ENDDAY:
-      //turn all lights off
-      // Serial.print("(AFTER) ALL LIGHTS OFF");
-      break;
-    case CLASS:
-      //turn green light on
-      // Serial.print("GREEN ");
-      break;
-    case WARNIN:
-      //turn yellow light on
-      //  Serial.print("YELLOW ");
-      break;
-    case PASSIN:
-      //turn red light on
-      //  Serial.print("RED ");
-      break;
-    case LUNCH:
-      //turn red light on
-      // Serial.print("LUNCH RED ");
-      break;
-  }
-  //#if DEBUG == true
-  Serial.print(hrs);
-  Serial.print(':');
-  Serial.print(mins);
-  Serial.print(':');
-  Serial.print(nowTime);
-  Serial.print(' ');
-  Serial.print(stateName[lightState]);
-  Serial.print(' ');
-  Serial.print(periodName[schedule[periodValue][PERIOD]]);
-  Serial.print(' ');
-  Serial.print(periodValue);
-  Serial.print(' ');
-  Serial.print(scheduleName[scheduleType]);
-  Serial.print(' ');
-  Serial.print(daysOfTheWeek[day]);
-  Serial.println();
-  //#endif
+
+switch (lightState) {
+case BEFORE:
+  //turn all lights off
+  // Serial.print("(BEFORE) ALL LIGHTS OFF");
+  break;
+case ENDDAY:
+  //turn all lights off
+  // Serial.print("(AFTER) ALL LIGHTS OFF");
+  break;
+case CLASS:
+  //turn green light on
+  // Serial.print("GREEN ");
+  break;
+case WARNIN:
+  //turn yellow light on
+  //  Serial.print("YELLOW ");
+  break;
+case PASSIN:
+  //turn red light on
+  //  Serial.print("RED ");
+  break;
+case LUNCH:
+  //turn red light on
+  // Serial.print("LUNCH RED ");
+  break;
+}
+
+Serial.print(hrs);
+Serial.print(':');
+Serial.print(mins);
+Serial.print(':');
+Serial.print(nowTime);
+Serial.print(' ');
+Serial.print(stateName[lightState]);
+Serial.print(' ');
+Serial.print(periodName[schedule[periodValue][PERIOD]]);
+Serial.print(' ');
+Serial.print(periodValue);
+Serial.print(' ');
+Serial.print(scheduleName[scheduleType]);
+Serial.print(' ');
+Serial.print(daysOfTheWeek[day]);
+Serial.println();
 
 }
 
