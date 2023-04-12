@@ -17,7 +17,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_YECe518ozUaevBk2vkEd9qMfggNC" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_TlBV35gsT2SgnRIMLTgYV9bneq51" // <- Adafruit might reset this from time to time so make sure to check this is the same
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -79,12 +79,13 @@ AdafruitIO_Feed *scheduleControl = io.feed("scheduleControl");
 #define SCHEDULE          5
 
 //State defines
-#define BEFORE            0
-#define ENDDAY            1
-#define CLASS             2
-#define WARNIN            3
-#define PASSIN            4
-#define LUNCH             5
+#define WEEKEND           0
+#define BEFORE            1
+#define ENDDAY            2
+#define CLASS             3
+#define WARNIN            4
+#define PASSIN            5
+#define LUNCH             6
 
 //Outschool time defines
 #define DAYSTART          460
@@ -104,7 +105,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 char periodName[9][10] {"Advisory", "Period_1", "Period_2", "Period_3", "Period_4", "Period_5", "Period_6", "Lunch", "Activity"};
 char scheduleName[4][12] {"Regular", "Half_Day", "AdvisoryAct", "ExtendedAdv"};
-char stateName[6][7] {"BEFORE", "ENDDAY", "CLASS", "WARNIN", "PASSIN", "LUNCH"};
+char stateName[7][8] {"WEEKEND", "BEFORE", "ENDDAY", "CLASS", "WARNIN", "PASSIN", "LUNCH"};
 
 int scheduleType = REG; //<- variable that is changing
 
@@ -123,13 +124,15 @@ uint8_t schedule[32][6] {
   {11, 50, 30, 5, LUN, REG},
   {12, 23, 56, 5, PR5, REG},
   {13, 22, 56, 13, PR6, REG},
+  
   {7, 45, 5, 0, ADV, HLF},
-  {7, 53, 42, 5, PR1, HLF},
-  {8, 38, 38, 5, PR2, HLF},
-  {9, 19, 38, 5, PR3, HLF},
-  {10, 0, 38, 5, PR4, HLF},
-  {10, 41, 36, 5, PR5, HLF},
+  {7, 53, 45, 5, PR1, HLF},
+  {8, 38, 41, 5, PR2, HLF},
+  {9, 19, 41, 5, PR3, HLF},
+  {10, 0, 41, 5, PR4, HLF},
+  {10, 41, 41, 5, PR5, HLF},
   {11, 22, 38, 15, PR6, HLF},
+  
   {7, 45, 5, 0,  ADV, AAC},
   {7, 53, 48, 5, PR1, AAC},
   {8, 44, 48, 5, PR2, AAC},
@@ -234,9 +237,7 @@ void loop() {
 #endif
 
   if ((day == SATURDAY) || (day == SUNDAY)) {
-    digitalWrite(GREEN_PIN, LIGHT_OFF);
-    digitalWrite(YELLOW_PIN, LIGHT_OFF);
-    digitalWrite(RED_PIN, LIGHT_OFF);
+    lightState = WEEKEND;
   } else {
     //Determines if time is before school overall
     if (nowTime < DAYSTART) {
@@ -311,6 +312,12 @@ void loop() {
       digitalWrite(YELLOW_PIN, LIGHT_OFF);
       digitalWrite(RED_PIN, LIGHT_ON);
       break;
+    case WEEKEND:
+      digitalWrite(GREEN_PIN, LIGHT_OFF);
+      digitalWrite(YELLOW_PIN, LIGHT_OFF);
+      digitalWrite(RED_PIN, LIGHT_OFF);
+      break;
+
   }
 
   Serial.print(hrs);
