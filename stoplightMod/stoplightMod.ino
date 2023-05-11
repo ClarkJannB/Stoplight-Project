@@ -1,6 +1,17 @@
 /*
-  Replace the total with sizeOf in the for loop
-  Move the period type out of the conditional
+  Recieves time from Netowrk Time Protocol (NTP) to control the lights
+
+  Green indicates class time or "go time"
+  Yellow indicates warning time or 5 minutes before the period ends
+  Special case for Yellow is when it flashes at the end of the day for cleanup time
+  Red indicates passing time or lunch time (when class is not going on)
+
+  Time variables such as start time of period, period length, period type, and warning length can be controlled
+  using the overal multi-dimensional array at the top. 
+ 
+  You can control which schedule the stoplight will follow by using the Adafruit IO dashboard "https://io.adafruit.com/tisnotgonnawork/dashboards/stoplight-schedule-control"
+  created 1 Apr 2023
+  by Clark Barayuga '23
 */
 // comment out the following lines if you are using fona or ethernet
 #include "AdafruitIO_WiFi.h"
@@ -17,7 +28,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "tisnotgonnawork"
-#define IO_KEY "aio_TlBV35gsT2SgnRIMLTgYV9bneq51" // <- Adafruit might reset this from time to time so make sure to check this is the same
+#define IO_KEY "aio_uoFY37ffH7SrQgup7S2iyhGA58nL" // <- Adafruit might reset this from time to time so make sure to check this is the same
 #if defined(USE_AIRLIFT) || defined(ADAFRUIT_METRO_M4_AIRLIFT_LITE) ||         \
     defined(ADAFRUIT_PYPORTAL)
 // Configure the pins used for the ESP32 connection
@@ -109,6 +120,7 @@ char stateName[7][8] {"WEEKEND", "BEFORE", "ENDDAY", "CLASS", "WARNIN", "PASSIN"
 
 int scheduleType = REG; //<- variable that is changing
 
+//state machine 
 int lightState;
 
 //DEBUG
@@ -124,15 +136,13 @@ uint8_t schedule[32][6] {
   {11, 50, 30, 5, LUN, REG},
   {12, 23, 56, 5, PR5, REG},
   {13, 22, 56, 13, PR6, REG},
-  
   {7, 45, 5, 0, ADV, HLF},
-  {7, 53, 45, 5, PR1, HLF},
-  {8, 38, 41, 5, PR2, HLF},
-  {9, 19, 41, 5, PR3, HLF},
-  {10, 0, 41, 5, PR4, HLF},
-  {10, 41, 41, 5, PR5, HLF},
+  {7, 53, 42, 5, PR1, HLF},
+  {8, 38, 38, 5, PR2, HLF},
+  {9, 19, 38, 5, PR3, HLF},
+  {10, 0, 38, 5, PR4, HLF},
+  {10, 41, 38, 5, PR5, HLF},
   {11, 22, 38, 15, PR6, HLF},
-  
   {7, 45, 5, 0,  ADV, AAC},
   {7, 53, 48, 5, PR1, AAC},
   {8, 44, 48, 5, PR2, AAC},
@@ -316,6 +326,11 @@ void loop() {
       digitalWrite(GREEN_PIN, LIGHT_OFF);
       digitalWrite(YELLOW_PIN, LIGHT_OFF);
       digitalWrite(RED_PIN, LIGHT_OFF);
+      delay(5000);
+      digitalWrite(GREEN_PIN, LIGHT_ON);
+      digitalWrite(YELLOW_PIN, LIGHT_ON);
+      digitalWrite(RED_PIN, LIGHT_ON);
+      delay(5000);
       break;
 
   }
